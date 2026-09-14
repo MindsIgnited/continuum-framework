@@ -100,12 +100,22 @@ public interface IgniteClusterProperties {
     /**
      * Limit on the number of messages queued for each communication connection, incoming and
      * outgoing, before Ignite applies back pressure to the sender. Ignite's own default, 0, means
-     * unbounded, which it recommends against in production: a slow or stalled peer then lets the
-     * sending node's heap grow without limit. Ignite suggests 1024 as a starting point.
+     * unbounded, which it warns against at node start: a slow or stalled peer then lets the
+     * sending node's heap grow without limit. 1024 is a reasonable starting point; it is the default
+     * Ignite.NET ships for the same setting.
+     * <p>
+     * Back pressure blocks the thread that sends, and Ignite cache calls send from the caller's
+     * thread. Continuum makes some of those calls on Vert.x event loops, so with a limit set, a peer
+     * that stops draining its queue parks that event loop until Ignite's failure detection closes the
+     * connection. Size the limit and the failure detection timeout together.
+     * <p>
      * Set through {@code continuum.cluster.communicationMessageQueueLimit} or
-     * {@code CONTINUUM_CLUSTER_COMMUNICATION_MESSAGE_QUEUE_LIMIT}.
+     * {@code CONTINUUM_CLUSTER_COMMUNICATION_MESSAGE_QUEUE_LIMIT}. Returns null when the
+     * implementation does not override this, which leaves Ignite's default in place.
      */
-    Integer getCommunicationMessageQueueLimit();
+    default Integer getCommunicationMessageQueueLimit() {
+        return null;
+    }
 
     // /**
     //  * Port used for Ignite JMX

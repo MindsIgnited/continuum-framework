@@ -1,11 +1,14 @@
 package org.kinotic.continuum.internal.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.Map;
 
 import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.junit.jupiter.api.Test;
+import org.kinotic.continuum.api.config.IgniteClusterDiscoveryType;
+import org.kinotic.continuum.api.config.IgniteClusterProperties;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
@@ -55,12 +58,44 @@ class IgniteCommunicationQueueLimitTest {
         assertEquals(47101, communicationSpiFor(1024).getLocalPort(), "the port still comes through");
     }
 
+    @Test
+    void implementersWrittenBeforeTheLimitExistedLeaveIgnitesDefault() {
+        IgniteClusterProperties properties = new PropertiesWithoutTheLimit();
+
+        assertNull(properties.getCommunicationMessageQueueLimit(), "the interface supplies null, not a value");
+        assertEquals(TcpCommunicationSpi.DFLT_MSG_QUEUE_LIMIT, communicationSpiFor(properties).getMessageQueueLimit());
+        assertEquals(47101, communicationSpiFor(properties).getLocalPort(), "the port still comes through");
+    }
+
     private static TcpCommunicationSpi communicationSpiFor(int limit) {
-        DefaultIgniteClusterProperties properties = new DefaultIgniteClusterProperties()
-                .setCommunicationPort(47101)
-                .setCommunicationMessageQueueLimit(limit);
+        return communicationSpiFor(new DefaultIgniteClusterProperties()
+                                           .setCommunicationPort(47101)
+                                           .setCommunicationMessageQueueLimit(limit));
+    }
+
+    private static TcpCommunicationSpi communicationSpiFor(IgniteClusterProperties properties) {
         ContinuumIgniteConfig config = new ContinuumIgniteConfig();
         ReflectionTestUtils.setField(config, "igniteClusterProperties", properties);
         return config.tcpCommunicationSpi();
+    }
+
+    /**
+     * An IgniteClusterProperties written against continuum 3.0, which had no queue limit: it implements
+     * every accessor that existed then and nothing else, so it only compiles while the new accessor
+     * has a default.
+     */
+    private static final class PropertiesWithoutTheLimit implements IgniteClusterProperties {
+        @Override public IgniteClusterDiscoveryType getDiscoveryType() { return IgniteClusterDiscoveryType.LOCAL; }
+        @Override public Long getJoinTimeoutMs() { return 0L; }
+        @Override public String getLocalAddress() { return null; }
+        @Override public String getSharedFsPath() { return null; }
+        @Override public String getKubernetesNamespace() { return null; }
+        @Override public String getKubernetesServiceName() { return null; }
+        @Override public Boolean getKubernetesIncludeNotReadyAddresses() { return false; }
+        @Override public String getKubernetesMasterUrl() { return null; }
+        @Override public String getKubernetesAccountToken() { return null; }
+        @Override public Integer getDiscoveryPort() { return 47500; }
+        @Override public String getLocalAddresses() { return null; }
+        @Override public Integer getCommunicationPort() { return 47101; }
     }
 }
