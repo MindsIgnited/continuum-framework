@@ -37,6 +37,12 @@ configurations {
     }
 }
 
+// The Boot BOM manages Netty below what Vert.x was built against, and the gap is a NoSuchMethodError on
+// the event loop the first time a client upgrades to HTTP/2 - which nothing speaking HTTP/1.1 ever
+// sees. Overriding the BOM's property keeps the whole Netty set at the version Vert.x asks for
+// (vertx-dependencies <netty.version>). Structures pins the same version and covers it with a test.
+ext['netty.version'] = nettyVersion
+
 dependencyManagement {
     imports {
         mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
@@ -57,7 +63,6 @@ dependencyManagement {
         dependency "io.vertx:vertx-web-graphql:${vertxVersion}"
         dependency "io.vertx:vertx-health-check:${vertxVersion}"
 
-        dependency "jakarta.annotation:jakarta.annotation-api:${jakartaAnnotationVersion}"
         dependency "javax.cache:cache-api:${jCacheApiVersion}"
 
         dependency "org.apache.commons:commons-lang3:${apacheCommonsLangVersion}"
@@ -71,8 +76,6 @@ dependencyManagement {
         dependency "org.apache.ignite:ignite-kubernetes:${igniteVersion}"
 
         dependency "net.jodah:failsafe:${failsafeVersion}"
-
-        dependency "org.apache.groovy:groovy:${groovyVersion}"
 
         dependency "org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}"
     }
