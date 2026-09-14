@@ -97,6 +97,16 @@ public interface IgniteClusterProperties {
      */
     Integer getCommunicationPort();
 
+    /**
+     * Limit on the number of messages queued for each communication connection, incoming and
+     * outgoing, before Ignite applies back pressure to the sender. Ignite's own default, 0, means
+     * unbounded, which it recommends against in production: a slow or stalled peer then lets the
+     * sending node's heap grow without limit. Ignite suggests 1024 as a starting point.
+     * Set through {@code continuum.cluster.communicationMessageQueueLimit} or
+     * {@code CONTINUUM_CLUSTER_COMMUNICATION_MESSAGE_QUEUE_LIMIT}.
+     */
+    Integer getCommunicationMessageQueueLimit();
+
     // /**
     //  * Port used for Ignite JMX
     //  */

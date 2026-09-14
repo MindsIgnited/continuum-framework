@@ -36,6 +36,7 @@ public class DefaultIgniteClusterProperties implements IgniteClusterProperties {
     private String localAddress = null;
     private Integer discoveryPort = TcpDiscoverySpi.DFLT_PORT;
     private Integer communicationPort = TcpCommunicationSpi.DFLT_PORT;
+    private Integer communicationMessageQueueLimit = TcpCommunicationSpi.DFLT_MSG_QUEUE_LIMIT; // 0: unbounded
     private String localAddresses;
     private String sharedFsPath = "/tmp/structures-sharedfs";
     private String kubernetesNamespace = "default";
@@ -52,7 +53,8 @@ public class DefaultIgniteClusterProperties implements IgniteClusterProperties {
                                     .append("localAddress", localAddress)
                                     .append("joinTimeoutMs", joinTimeoutMs)
                                     .append("discoveryPort", discoveryPort)
-                                    .append("communicationPort", communicationPort);
+                                    .append("communicationPort", communicationPort)
+                                    .append("communicationMessageQueueLimit", communicationMessageQueueLimit);
 
         if (discoveryType == IgniteClusterDiscoveryType.SHAREDFS) {
             sb.append("sharedFsPath", sharedFsPath);

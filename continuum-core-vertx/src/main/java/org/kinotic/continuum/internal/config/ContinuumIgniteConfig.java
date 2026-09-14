@@ -115,6 +115,12 @@ public class ContinuumIgniteConfig {
     public TcpCommunicationSpi tcpCommunicationSpi() {
         TcpCommunicationSpi communicationSpi = new TcpCommunicationSpi();
         communicationSpi.setLocalPort(igniteClusterProperties.getCommunicationPort());
+        // Ignite's default is unbounded; a positive limit applies back pressure to a sender whose peer
+        // has stopped keeping up, instead of queueing messages on the heap without end
+        Integer messageQueueLimit = igniteClusterProperties.getCommunicationMessageQueueLimit();
+        if (messageQueueLimit != null) {
+            communicationSpi.setMessageQueueLimit(messageQueueLimit);
+        }
         return communicationSpi;
     }
 
