@@ -75,8 +75,6 @@ dependencyManagement {
         dependency "org.apache.ignite:ignite-slf4j:${igniteVersion}"
         dependency "org.apache.ignite:ignite-kubernetes:${igniteVersion}"
 
-        dependency "net.jodah:failsafe:${failsafeVersion}"
-
         dependency "org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}"
     }
 }

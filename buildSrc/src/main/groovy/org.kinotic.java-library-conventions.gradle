@@ -67,6 +67,8 @@ publishing {
 }
 
 jreleaser {
+    // Multi-module: the repository is at the root, not in the module JReleaser runs in
+    gitRootSearch = true
     signing {
         active = 'ALWAYS'
         armored = true
