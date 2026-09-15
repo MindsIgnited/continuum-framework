@@ -28,48 +28,49 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
-import io.vertx.ext.stomp.lite.StompServerConnection;
-import io.vertx.ext.stomp.lite.StompServerHandler;
+import io.vertx.ext.stomp.lite.AbstractStompServerHandler;
 import io.vertx.ext.stomp.lite.frame.Frame;
 import io.vertx.ext.stomp.lite.frame.InvalidConnectFrame;
+import io.vertx.ext.web.RoutingContext;
 
 /**
  *
  * Created by Navid Mitchell on 2019-02-05.
  */
-public class DefaultStompServerHandler implements StompServerHandler {
+public class DefaultStompServerHandler extends AbstractStompServerHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultStompServerHandler.class);
 
     private final Vertx vertx;
-    private final StompServerConnection connection;
     private final EndpointConnectionHandler endpointConnectionHandler;
 
 
     public DefaultStompServerHandler(Vertx vertx,
-                                     Services services,
-                                     StompServerConnection connection) {
+                                     Services services) {
         this.vertx = vertx;
-        this.connection = connection;
         this.endpointConnectionHandler = new EndpointConnectionHandler(services);
     }
 
     @Override
-    public Promise<Map<String, String>> authenticate(Map<String, String> connectHeaders) {
-        Promise<Map<String,String>> ret = Promise.promise();
-        Future<Map<String,String>> future = Future.fromCompletionStage(endpointConnectionHandler.authenticate(connectHeaders),
+    public Future<MultiMap> handshake(RoutingContext routingContext) {
+        // Authentication happens on the STOMP CONNECT frame, see connect, so the transport handshake is
+        // accepted without adding any headers to the upgrade response
+        return Future.succeededFuture(MultiMap.caseInsensitiveMultiMap());
+    }
+
+    @Override
+    public Future<Map<String, String>> connect(Map<String, String> connectHeaders) {
+        return Future.fromCompletionStage(endpointConnectionHandler.authenticate(connectHeaders),
                                                                        vertx.getOrCreateContext());
-        future.onComplete(ret);
-        return ret;
     }
 
     @Override
     public void send(Frame frame) {
         // FIXME: this is probably the wrong way to  do this, We are not really providing guaranteed delivery below so this kinda just creates a bottle neck for no reason.
         // We pause the client to effectively make all client requests block until the previous request is handled asynchronously
-        connection.pause();
+        stompServerConnection.pause();
 
         log.trace("Send Frame received\n{}", frame.toString());
 
@@ -78,10 +79,10 @@ public class DefaultStompServerHandler implements StompServerHandler {
         endpointConnectionHandler
                 .send(incomingEvent)
                 .subscribe(null,
-                           connection::sendErrorAndDisconnect,
+                           stompServerConnection::sendErrorAndDisconnect,
                            () -> {
-                               connection.sendReceiptIfNeeded(frame);
-                               connection.resume();
+                               stompServerConnection.sendReceiptIfNeeded(frame);
+                               stompServerConnection.resume();
                            });
     }
 
@@ -96,12 +97,12 @@ public class DefaultStompServerHandler implements StompServerHandler {
 
             CRI cri = CRI.create(frame.getDestination());
 
-            StompSubscriptionEventSubscriber subscriber = new StompSubscriptionEventSubscriber(cri.raw(), subscriptionId, connection);
+            StompSubscriptionEventSubscriber subscriber = new StompSubscriptionEventSubscriber(cri.raw(), subscriptionId, stompServerConnection);
             endpointConnectionHandler.subscribe(cri, subscriptionId, subscriber);
 
         } catch (Exception e) {
             log.error("Exception occurred handling subscribe", e);
-            connection.sendErrorAndDisconnect(e);
+            stompServerConnection.sendErrorAndDisconnect(e);
         }
     }
 
@@ -116,7 +117,7 @@ public class DefaultStompServerHandler implements StompServerHandler {
 
         } catch (Exception e) {
             log.error("Exception occurred handling unsubscribe", e);
-            connection.sendErrorAndDisconnect(e);
+            stompServerConnection.sendErrorAndDisconnect(e);
         }
     }
 

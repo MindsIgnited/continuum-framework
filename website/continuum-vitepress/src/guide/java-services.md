@@ -118,7 +118,7 @@ import org.kinotic.continuum.api.security.Participant;
 
 @Publish
 public interface SecureService {
-    
+
     // Participant is automatically injected by the framework
     List<Data> getData(Participant participant);
 }
@@ -190,7 +190,7 @@ You can inject repositories, other services (including other Continuum services)
 You can call other Continuum services directly by injecting them as Spring beans—just like normal, even if they're implemented in another process or microservice. In this case, you'll need to make sure the service interface is shared in both projects (either by using a shared library module, or copying the interface). Continuum automatically creates a proxy, so you can interact with the remote service as if it were local.
 
 > ℹ️ **Note:** This approach works across processes or distributed services, not just within the same Spring application.  
-> To see a full, production-ready example, check out the [CoolCommerce project](https://github.com/Kinotic-Foundation/continuum-examples/tree/main/CoolCommerce).
+> To see a full, production-ready example, check out the [CoolCommerce project](https://github.com/MindsIgnited/continuum-examples/tree/main/CoolCommerce).
 
 
 When you need to call another Continuum service, just inject it like any other Spring bean:
@@ -230,13 +230,13 @@ import java.util.UUID;
 @Publish
 @Version("0.1.0")
 public interface StoreService {
-    
+
     List<Category> getAllCategories();
-    
+
     List<Product> getAllProductsForCategoryId(Long categoryId);
-    
+
     Product getProduct(Long productId);
-    
+
     Mono<UUID> checkout(CheckoutInfo checkoutInfo);
 }
 ```

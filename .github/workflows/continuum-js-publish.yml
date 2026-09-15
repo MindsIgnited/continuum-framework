@@ -1,0 +1,80 @@
+name: Publish continuum-js packages
+
+# Not wired up to automatic triggers yet — run manually from the Actions tab.
+# To enable automatic publishing, replace `on:` with:
+#   on:
+#     push:
+#       branches:
+#         - develop
+#       tags:
+#         - 'v*'
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: continuum-js-publish-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish @kinotic/continuum-idl and @kinotic/continuum-cli
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - continuum-idl-js
+          - continuum-cli
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@kinotic'
+          cache: pnpm
+          cache-dependency-path: continuum-js/${{ matrix.package }}/pnpm-lock.yaml
+
+      - name: Determine version and dist-tag
+        id: ver
+        working-directory: continuum-js/${{ matrix.package }}
+        run: |
+          BASE=$(node -p "require('./package.json').version")
+          BASE=${BASE%%-*}
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${BASE}"
+            DIST_TAG="latest"
+          else
+            SHORT_SHA=$(git rev-parse --short=7 HEAD)
+            VERSION="${BASE}-dev.${SHORT_SHA}"
+            DIST_TAG="dev"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "dist_tag=${DIST_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Publishing ${{ matrix.package }} version ${VERSION} with dist-tag ${DIST_TAG}"
+
+      - name: Set version
+        working-directory: continuum-js/${{ matrix.package }}
+        run: npm version --no-git-tag-version --allow-same-version "${{ steps.ver.outputs.version }}"
+
+      - name: Install dependencies
+        working-directory: continuum-js/${{ matrix.package }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        working-directory: continuum-js/${{ matrix.package }}
+        run: pnpm build
+
+      - name: Publish to npm
+        working-directory: continuum-js/${{ matrix.package }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --access public --no-git-checks --tag "${{ steps.ver.outputs.dist_tag }}"

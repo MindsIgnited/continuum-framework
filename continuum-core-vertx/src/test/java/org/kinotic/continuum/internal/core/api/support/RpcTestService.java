@@ -17,13 +17,13 @@
 
 package org.kinotic.continuum.internal.core.api.support;
 
-import com.fasterxml.jackson.databind.util.TokenBuffer;
+import io.vertx.core.Future;
 import org.kinotic.continuum.api.annotations.Publish;
 import org.kinotic.continuum.api.security.Participant;
 import org.kinotic.continuum.internal.core.api.RpcTests;
-import io.vertx.core.Future;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.util.TokenBuffer;
 
 import java.util.List;
 import java.util.Map;
@@ -54,6 +54,8 @@ public interface RpcTestService {
                                                     boolean boolValue,
                                                     SimpleObject simpleObject,
                                                     List<String> listOfStrings);
+
+    String concatString(String lhs, String rhs);
 
     Mono<String> firstArgParticipant(Participant participant, String suffix);
 

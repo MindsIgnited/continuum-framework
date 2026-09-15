@@ -23,6 +23,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.cache.Cache;
 import javax.cache.event.CacheEntryEvent;
 
+import io.vertx.core.*;
+import io.vertx.core.internal.ContextInternal;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.query.ContinuousQuery;
 import org.apache.ignite.cache.query.Query;
@@ -31,14 +33,6 @@ import org.kinotic.continuum.core.api.event.StreamData;
 import org.kinotic.continuum.internal.utils.IgniteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.vertx.core.Closeable;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.impl.ContextInternal;
 
 /**
  * Using this as a bridge between tested legacy Ignite logic and the new code base
@@ -179,7 +173,7 @@ public class IgniteContinuousQueryObserver<K, V> implements Observer<StreamData<
     }
 
     @Override
-    public void close(Promise<Void> completion) {
+    public void close(Completable<Void> completion) {
         if(log.isTraceEnabled()){
             log.trace("Closing Continuous query");
         }
@@ -194,7 +188,7 @@ public class IgniteContinuousQueryObserver<K, V> implements Observer<StreamData<
 
         if (completion != null) {
             Context context = vertx.getOrCreateContext();
-            context.runOnContext(v -> completion.handle(Future.succeededFuture()));
+            context.runOnContext(v -> completion.succeed());
         }
     }
 }

@@ -91,14 +91,14 @@ import org.kinotic.continuum.core.api.event.DefaultEvent;
 
 @Service
 public class SensorService {
-    
+
     @Autowired
     private EventService eventService;
-    
+
     public void publishTemperatureReading(String sensorId, double temperature) {
         // Create CRI - using stream:// for persistent events
         CRI destination = CRI.create("stream://temperature/" + sensorId);
-        
+
         // Create and send the event
         Event<Double> event = new DefaultEvent<>(destination, temperature);
         eventService.send(event).subscribe();

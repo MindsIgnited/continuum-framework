@@ -17,9 +17,6 @@
 
 package org.kinotic.continuum.internal.core.api.support;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.TokenBuffer;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.kinotic.continuum.api.security.Participant;
@@ -28,6 +25,9 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.util.TokenBuffer;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 public class DefaultRpcTestService implements RpcTestService{
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JsonMapper jsonMapper;
     @Autowired
     private Vertx vertx;
 
@@ -53,6 +53,11 @@ public class DefaultRpcTestService implements RpcTestService{
                                             SimpleObject simpleObject,
                                             List<String> listOfStrings) {
         return new ABunchOfArgumentsHolder(intValue, longValue, stringValue, boolValue, simpleObject, listOfStrings);
+    }
+
+    @Override
+    public String concatString(String lhs, String rhs) {
+        return lhs + rhs;
     }
 
     @Override
@@ -243,9 +248,9 @@ public class DefaultRpcTestService implements RpcTestService{
     @Override
     public String echoTokenBuffer(TokenBuffer tokenBuffer) {
         try {
-            String jsonString = objectMapper.writeValueAsString(tokenBuffer);
+            String jsonString = jsonMapper.writeValueAsString(tokenBuffer);
             return jsonString;
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException(e);
         }
     }

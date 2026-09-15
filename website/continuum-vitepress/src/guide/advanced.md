@@ -20,7 +20,7 @@ In a multi-service architecture:
 
 ### CoolCommerce Example
 
-The [CoolCommerce](https://github.com/Kinotic-Foundation/continuum-examples/tree/main/CoolCommerce) project demonstrates a complete multi-service architecture:
+The [CoolCommerce](https://github.com/MindsIgnited/continuum-examples/tree/main/CoolCommerce) project demonstrates a complete multi-service architecture:
 
 **Service Structure:**
 - `ecommerce-main`: Main store functionality (`StoreService`)
@@ -267,4 +267,4 @@ Advanced Continuum patterns enable:
 ## What's Next?
 
 - Check out [Examples](./examples) for complete working examples
-- See the [CoolCommerce project](https://github.com/Kinotic-Foundation/continuum-examples/tree/main/CoolCommerce) for a full multi-service implementation
+- See the [CoolCommerce project](https://github.com/MindsIgnited/continuum-examples/tree/main/CoolCommerce) for a full multi-service implementation

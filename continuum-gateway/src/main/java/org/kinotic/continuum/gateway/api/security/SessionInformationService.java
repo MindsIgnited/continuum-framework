@@ -17,18 +17,17 @@
 
 package org.kinotic.continuum.gateway.api.security;
 
-import org.kinotic.continuum.api.annotations.Publish;
-import org.kinotic.continuum.api.annotations.Version;
 import org.kinotic.continuum.core.api.event.StreamData;
 import org.kinotic.continuum.core.api.security.SessionMetadata;
+
 import reactor.core.publisher.Flux;
 
 /**
  *
  * Created by Navid Mitchell on 6/3/20
  */
-@Publish
-@Version("0.1.0")
+//@Publish FIXME: add RBAC for this
+//@Version("0.1.0")
 public interface SessionInformationService {
 
     Flux<Long> countActiveSessionsContinuous();

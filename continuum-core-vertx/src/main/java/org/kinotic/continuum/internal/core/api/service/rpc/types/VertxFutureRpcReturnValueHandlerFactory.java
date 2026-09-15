@@ -17,11 +17,11 @@
 
 package org.kinotic.continuum.internal.core.api.service.rpc.types;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vertx.core.Future;
+import org.kinotic.continuum.internal.core.api.service.ExceptionConverter;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcResponseConverter;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcReturnValueHandler;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcReturnValueHandlerFactory;
-import io.vertx.core.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.GenericTypeResolver;
@@ -40,12 +40,12 @@ public class VertxFutureRpcReturnValueHandlerFactory implements RpcReturnValueHa
     private static final Logger log = LoggerFactory.getLogger(VertxFutureRpcReturnValueHandlerFactory.class);
 
     private final RpcResponseConverter rpcResponseConverter;
-    private final ObjectMapper objectMapper;
+    private final ExceptionConverter exceptionConverter;
 
     public VertxFutureRpcReturnValueHandlerFactory(RpcResponseConverter rpcResponseConverter,
-                                                   ObjectMapper objectMapper) {
+                                                   ExceptionConverter exceptionConverter) {
         this.rpcResponseConverter = rpcResponseConverter;
-        this.objectMapper = objectMapper;
+        this.exceptionConverter = exceptionConverter;
     }
 
     @Override
@@ -65,7 +65,7 @@ public class VertxFutureRpcReturnValueHandlerFactory implements RpcReturnValueHa
     public RpcReturnValueHandler createReturnValueHandler(Method method, Object... args) {
         return new VertxFutureRpcReturnValueHandler(new MethodParameter(method, -1),
                                                     rpcResponseConverter,
-                                                    objectMapper);
+                                                    exceptionConverter);
     }
 
 }

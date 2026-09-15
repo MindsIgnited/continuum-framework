@@ -2,8 +2,6 @@ plugins {
 	  id 'org.kinotic.java-application-conventions'
 }
 
-mainClassName = "org.kinotic.continuum.gatewayserver.ContinuumGatewayServerApplication"
-
 dependencies {
 	// Additional Continuum Dependencies
 	implementation project(':continuum-gateway')

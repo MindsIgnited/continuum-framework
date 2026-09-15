@@ -17,7 +17,6 @@
 
 package org.kinotic.continuum.gateway.internal.endpoints;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
@@ -37,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Mono;
+import tools.jackson.core.JacksonException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -159,7 +159,7 @@ public class EndpointConnectionHandler {
                 try {
 
                     // FIXME: when the invocation is local this happens for no reason. If the event stays on the local bus we shouldn't do this..
-                    incomingEvent.metadata().put(EventConstants.SENDER_HEADER, services.objectMapper.writeValueAsString(session.participant()));
+                    incomingEvent.metadata().put(EventConstants.SENDER_HEADER, services.jsonMapper.writeValueAsString(session.participant()));
 
                     // make sure reply-to if present is scoped to sender
                     // FIXME: a reply should not need a reply, therefore a replyCri probably should not be a EventConstants.SERVICE_DESTINATION_PREFIX
@@ -295,8 +295,8 @@ public class EndpointConnectionHandler {
     private String createConnectedInfoJson(Session session){
         try {
             ConnectedInfo connectedInfo = new ConnectedInfo(session.participant(), session.replyToId(), session.sessionId());
-            return services.objectMapper.writeValueAsString(connectedInfo);
-        } catch (JsonProcessingException e) {
+            return services.jsonMapper.writeValueAsString(connectedInfo);
+        } catch (JacksonException e) {
             throw new IllegalStateException(e);
         }
     }

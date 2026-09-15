@@ -18,7 +18,7 @@
 package org.kinotic.continuum.internal.core.api.aignite;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +41,8 @@ public class IterableEventLooper<T> implements SuspendableObserver<T> , Closeabl
 
 
     /**
-     * Constructs a new IterableEventLooper
-     * IterableEventLooper will always close the iterable provided even if this method throws an error.
+     * Constructs a new {@link IterableEventLooper}
+     * {@link IterableEventLooper} will always close the iterable provided even if this method throws an error.
      * NOTE: will not be closed if start is never called
      *
      * @param vertx instance to use
@@ -58,8 +58,8 @@ public class IterableEventLooper<T> implements SuspendableObserver<T> , Closeabl
 
 
     /**
-     * Constructs a new IterableEventLooper
-     * IterableEventLooper will always close the iterable provided even if this method throws an error.
+     * Constructs a new {@link IterableEventLooper}
+     * {@link IterableEventLooper} will always close the iterable provided even if this method throws an error.
      * NOTE: will not be closed if start is never called
      *
      * @param vertx instance to use
@@ -137,57 +137,49 @@ public class IterableEventLooper<T> implements SuspendableObserver<T> , Closeabl
     }
 
     public void start() {
-        creatingContext.executeBlocking(promise -> {
-            IteratorEventLooper<T> ret;
-            try{
-                // Setup Iterator to do actual work
-                ret = new IteratorEventLooper<>(vertx,iterable.iterator());
-                promise.complete(ret);
-            }catch (Exception e){
-                promise.fail(e);
-            }
-        }, (Handler<AsyncResult<IteratorEventLooper<T>>>) result -> {
+        creatingContext
+                .executeBlocking(() -> new IteratorEventLooper<>(vertx, iterable.iterator()))
+                .onComplete(result -> {
+                    if(result.succeeded()) {
+                        // initialize internal vars for use later
+                        this.cursorIterator = result.result();
 
-            if(result.succeeded()) {
-                // initialize internal vars for use later
-                this.cursorIterator = result.result();
+                        cursorIterator.handler(data -> {
+                            if(resultHandler != null){
+                                resultHandler.handle(data);
+                            }
+                        });
 
-                cursorIterator.handler(data -> {
-                    if(resultHandler != null){
-                        resultHandler.handle(data);
-                    }
-                });
+                        // setup internal handlers to make sure iterable is closed
+                        cursorIterator.completionHandler(event -> {
 
-                // setup internal handlers to make sure iterable is closed
-                cursorIterator.completionHandler(event -> {
+                            if (closeIterableOnComplete) {
+                                close();
+                            }
 
-                    if (closeIterableOnComplete) {
+                            if (completionHandler != null) {
+                                creatingContext.runOnContext(v -> completionHandler.handle(null));
+                            }
+                        });
+
+                        cursorIterator.exceptionHandler(event -> {
+
+                            close();
+
+                            if (exceptionHandler != null) {
+                                creatingContext.runOnContext(v -> exceptionHandler.handle(event));
+                            }
+                        });
+
+                        // now actually start doing work
+                        cursorIterator.start();
+                    }else{
                         close();
-                    }
-
-                    if (completionHandler != null) {
-                        creatingContext.runOnContext(v -> completionHandler.handle(null));
-                    }
-                });
-
-                cursorIterator.exceptionHandler(event -> {
-
-                    close();
-
-                    if (exceptionHandler != null) {
-                        creatingContext.runOnContext(v -> exceptionHandler.handle(event));
+                        if(exceptionHandler != null){
+                            creatingContext.runOnContext(v -> exceptionHandler.handle(new IllegalStateException("Exception creating IteratorEventLooper", result.cause())));
+                        }
                     }
                 });
-
-                // now actually start doing work
-                cursorIterator.start();
-            }else{
-                close();
-                if(exceptionHandler != null){
-                    creatingContext.runOnContext(v -> exceptionHandler.handle(new IllegalStateException("Exception creating IteratorEventLooper", result.cause())));
-                }
-            }
-        });
     }
 
     @Override
@@ -196,7 +188,7 @@ public class IterableEventLooper<T> implements SuspendableObserver<T> , Closeabl
     }
 
     @Override
-    public void close(Promise<Void> completion) {
+    public void close(Completable<Void> completion) {
         if(cursorIterator != null){
             cursorIterator.close();
         }
@@ -206,7 +198,7 @@ public class IterableEventLooper<T> implements SuspendableObserver<T> , Closeabl
 
         if (completion != null) {
             Context context = vertx.getOrCreateContext();
-            context.runOnContext(v -> completion.handle(Future.succeededFuture()));
+            context.runOnContext(v -> completion.succeed());
         }
 
         if (creatingContext != null) {

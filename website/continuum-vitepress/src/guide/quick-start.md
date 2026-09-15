@@ -177,7 +177,7 @@ This path is for developers building backend services with Node.js or Bun. The C
 ### Step 1: Set Up the Gateway Server
 
 ```bash
-docker run -p 58503:58503 kinotic/continuum-gateway-server:latest
+docker run -p 58503:58503 kinoticai/continuum-gateway-server:latest
 ```
 
 The Gateway acts as a router, allowing your Node.js/Bun services and frontend clients to communicate through Continuum.

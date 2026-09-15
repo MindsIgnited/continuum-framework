@@ -17,27 +17,11 @@
 
 package org.kinotic.continuum.internal.config;
 
-import static org.apache.ignite.failure.FailureType.CRITICAL_ERROR;
-import static org.apache.ignite.failure.FailureType.SEGMENTATION;
-import static org.apache.ignite.failure.FailureType.SYSTEM_CRITICAL_OPERATION_TIMEOUT;
-import static org.apache.ignite.failure.FailureType.SYSTEM_WORKER_BLOCKED;
-import static org.apache.ignite.failure.FailureType.SYSTEM_WORKER_TERMINATION;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ignite.IgniteSystemProperties;
 import org.apache.ignite.calcite.CalciteQueryEngineConfiguration;
-import org.apache.ignite.configuration.CacheConfiguration;
-import org.apache.ignite.configuration.DataRegionConfiguration;
-import org.apache.ignite.configuration.DataStorageConfiguration;
-import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.configuration.SqlConfiguration;
-import org.apache.ignite.events.EventType;
+import org.apache.ignite.configuration.*;
 import org.apache.ignite.failure.FailureHandler;
 import org.apache.ignite.failure.NoOpFailureHandler;
 import org.apache.ignite.failure.StopNodeOrHaltFailureHandler;
@@ -60,7 +44,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-import lombok.extern.slf4j.Slf4j;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+
+import static org.apache.ignite.failure.FailureType.*;
 
 /**
  * Class provides environment agnostic configuration for ignite
@@ -110,8 +100,7 @@ public class ContinuumIgniteConfig {
         discoverySpi.setJoinTimeout(igniteClusterProperties.getJoinTimeoutMs());
         discoverySpi.setLocalPort(igniteClusterProperties.getDiscoveryPort());
 
-        if(igniteClusterProperties.getLocalAddress() != null
-                && StringUtils.isNotBlank(igniteClusterProperties.getLocalAddress())){
+        if(StringUtils.isNotBlank(igniteClusterProperties.getLocalAddress())){
             discoverySpi.setLocalAddress(igniteClusterProperties.getLocalAddress());
         }
 
@@ -126,6 +115,12 @@ public class ContinuumIgniteConfig {
     public TcpCommunicationSpi tcpCommunicationSpi() {
         TcpCommunicationSpi communicationSpi = new TcpCommunicationSpi();
         communicationSpi.setLocalPort(igniteClusterProperties.getCommunicationPort());
+        // Ignite's default is unbounded; a positive limit applies back pressure to a sender whose peer
+        // has stopped keeping up, instead of queueing messages on the heap without end
+        Integer messageQueueLimit = igniteClusterProperties.getCommunicationMessageQueueLimit();
+        if (messageQueueLimit != null) {
+            communicationSpi.setMessageQueueLimit(messageQueueLimit);
+        }
         return communicationSpi;
     }
 
@@ -143,11 +138,6 @@ public class ContinuumIgniteConfig {
                                                                                    // code
 
         IgniteConfiguration cfg = new IgniteConfiguration();
-
-        // Path workPath =
-        // Path.of(SystemUtils.getUserHome().getAbsolutePath(),".continuum", "ignite",
-        // "work");
-        // cfg.setWorkDirectory(workPath.toAbsolutePath().toString());
 
         cfg.setGridLogger(new Slf4jLogger());
 
@@ -190,14 +180,11 @@ public class ContinuumIgniteConfig {
             cfg.setCacheConfiguration(cacheConfigs);
         }
 
-        // Settings needed for vertx cluster manager!
-        cfg.setIncludeEventTypes(EventType.EVT_CACHE_OBJECT_REMOVED);
-
         cfg.setFailureHandler(failureHandler);
 
         cfg.setWorkDirectory(continuumProperties.getIgniteWorkDirectory());
 
-        // cfg.setPeerClassLoadingEnabled(true);
+        cfg.setAsyncContinuationExecutor(Runnable::run);
 
         return cfg;
     }
@@ -227,8 +214,7 @@ public class ContinuumIgniteConfig {
         log.info("Configuring LOCAL discovery (single-node mode)");
 
         TcpDiscoveryVmIpFinder ipFinder = new TcpDiscoveryVmIpFinder();
-        if(igniteClusterProperties.getLocalAddresses() != null
-                && StringUtils.isNotBlank(igniteClusterProperties.getLocalAddresses())){
+        if(StringUtils.isNotBlank(igniteClusterProperties.getLocalAddresses())){
             ipFinder.setAddresses(List.of(igniteClusterProperties.getLocalAddresses().split(",")));
         } else {
             ipFinder.setAddresses(List.of("127.0.0.1:" + igniteClusterProperties.getDiscoveryPort()));

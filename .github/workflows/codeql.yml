@@ -14,8 +14,12 @@ name: "CodeQL"
 on:
   push:
     branches: [ "develop" ]
+    paths-ignore:
+      - 'website/**'
   pull_request:
     branches: [ "develop" ]
+    paths-ignore:
+      - 'website/**'
   schedule:
     - cron: '35 16 * * 4'
 

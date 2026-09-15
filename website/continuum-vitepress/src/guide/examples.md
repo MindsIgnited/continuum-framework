@@ -8,7 +8,7 @@ This section provides complete examples and tutorials for building applications 
 
 ## CoolCommerce Example
 
-The [CoolCommerce](https://github.com/Kinotic-Foundation/continuum-examples/tree/main/CoolCommerce) project is a complete e-commerce application demonstrating Continuum's multi-service architecture.
+The [CoolCommerce](https://github.com/MindsIgnited/continuum-examples/tree/main/CoolCommerce) project is a complete e-commerce application demonstrating Continuum's multi-service architecture.
 
 ### Architecture
 
@@ -29,7 +29,7 @@ CoolCommerce consists of:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Kinotic-Foundation/continuum-examples.git
+   git clone https://github.com/MindsIgnited/continuum-examples.git
    cd continuum-examples/CoolCommerce
    ```
 
@@ -48,7 +48,7 @@ CoolCommerce consists of:
    - Frontend: [http://localhost:9090](http://localhost:9090)
    - Gateway: [localhost:58503](localhost:58503)
 
-See the [CoolCommerce README](https://github.com/Kinotic-Foundation/continuum-examples/blob/main/CoolCommerce/README.md) for detailed setup instructions.
+See the [CoolCommerce README](https://github.com/MindsIgnited/continuum-examples/blob/main/CoolCommerce/README.md) for detailed setup instructions.
 
 ## Building a Simple Service
 
@@ -86,14 +86,19 @@ public class MyApplication {
 package com.example.api;
 
 import org.kinotic.continuum.api.annotations.Publish;
+
 import java.util.List;
 
 @Publish
 public interface TodoService {
     List<Todo> getAllTodos();
+
     Todo getTodo(Long id);
+
     Todo createTodo(Todo todo);
+
     Todo updateTodo(Todo todo);
+
     void deleteTodo(Long id);
 }
 ```
@@ -417,7 +422,7 @@ These examples demonstrate:
 - **Frontend Integration**: Vue.js integration patterns
 - **Multi-Service Architecture**: Complex distributed system patterns
 
-For more examples, check out the [CoolCommerce project](https://github.com/Kinotic-Foundation/continuum-examples/tree/main/CoolCommerce) for a complete production-ready example.
+For more examples, check out the [CoolCommerce project](https://github.com/MindsIgnited/continuum-examples/tree/main/CoolCommerce) for a complete production-ready example.
 
 ## What's Next?
 

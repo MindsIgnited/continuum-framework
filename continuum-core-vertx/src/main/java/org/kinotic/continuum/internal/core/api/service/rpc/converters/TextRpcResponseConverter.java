@@ -35,7 +35,7 @@ public class TextRpcResponseConverter implements RpcResponseConverter {
     public boolean supports(Event<byte[]> responseEvent, MethodParameter methodParameter) {
         boolean ret = false;
         String contentType = responseEvent.metadata().get(EventConstants.CONTENT_TYPE_HEADER);
-        if(contentType != null && contentType.length() > 0){
+        if(contentType != null && !contentType.isEmpty()){
             ret = MimeTypeUtils.TEXT_PLAIN_VALUE.contentEquals(contentType)
                     ||
                     (contentType.equalsIgnoreCase("application/text")

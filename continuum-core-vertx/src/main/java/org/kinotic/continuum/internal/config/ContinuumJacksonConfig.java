@@ -17,9 +17,6 @@
 
 package org.kinotic.continuum.internal.config;
 
-import com.fasterxml.jackson.core.Version;
-import com.fasterxml.jackson.databind.module.SimpleAbstractTypeResolver;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.kinotic.continuum.api.security.DefaultParticipant;
 import org.kinotic.continuum.api.security.Participant;
 import org.kinotic.continuum.core.api.crud.Page;
@@ -30,11 +27,14 @@ import org.kinotic.continuum.internal.serializer.PageableDeserializer;
 import org.kinotic.continuum.internal.serializer.SearchComparatorDeserializer;
 import org.kinotic.continuum.internal.serializer.SearchComparatorSerializer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.ReactiveAdapterRegistry;
+import tools.jackson.core.Version;
+import tools.jackson.databind.module.SimpleAbstractTypeResolver;
+import tools.jackson.databind.module.SimpleModule;
 
 /**
  *

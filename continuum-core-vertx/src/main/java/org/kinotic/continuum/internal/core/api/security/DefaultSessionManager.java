@@ -20,7 +20,7 @@ package org.kinotic.continuum.internal.core.api.security;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.vertx.core.Vertx;
-import io.vertx.ext.auth.PRNG;
+import io.vertx.ext.auth.prng.PRNG;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.kinotic.continuum.api.security.Participant;
@@ -40,7 +40,6 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -63,7 +62,6 @@ public class DefaultSessionManager implements SessionManager {
         this.random = new PRNG(vertx);
         this.parser = new PathPatternParser();
         this.parser.setPathOptions(PathContainer.Options.MESSAGE_ROUTE);
-        this.parser.setMatchOptionalTrailingSeparator(false);
 
         // Will be null when running some tests
         if(ignite !=  null){

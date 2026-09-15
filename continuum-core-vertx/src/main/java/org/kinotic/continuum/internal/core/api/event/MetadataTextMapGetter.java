@@ -1,7 +1,6 @@
 package org.kinotic.continuum.internal.core.api.event;
 
 import io.opentelemetry.context.propagation.TextMapGetter;
-import org.jetbrains.annotations.Nullable;
 import org.kinotic.continuum.core.api.event.Metadata;
 
 import java.util.ArrayList;
@@ -20,9 +19,8 @@ public class MetadataTextMapGetter implements TextMapGetter<Metadata> {
         return keys;
     }
 
-    @Nullable
     @Override
-    public String get(@Nullable Metadata carrier, String key) {
+    public String get(Metadata carrier, String key) {
         return carrier == null ? null : carrier.get(key);
     }
 }

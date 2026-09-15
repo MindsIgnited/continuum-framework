@@ -1,12 +1,11 @@
 package org.kinotic.continuum.internal.core.api.service.rpc.types;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.kinotic.continuum.core.api.event.Event;
 import org.kinotic.continuum.core.api.event.EventConstants;
+import org.kinotic.continuum.internal.core.api.service.ExceptionConverter;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcRequest;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcResponseConverter;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcReturnValueHandler;
-import org.kinotic.continuum.internal.utils.EventUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.MethodParameter;
@@ -23,20 +22,20 @@ public class CompletableFutureValueHandler implements RpcReturnValueHandler {
 
     private final MethodParameter methodParameter;
     private final RpcResponseConverter rpcResponseConverter;
-    private final ObjectMapper objectMapper;
+    private final ExceptionConverter exceptionConverter;
     private final CompletableFuture<Object> returnValue;
 
     public CompletableFutureValueHandler(MethodParameter methodParameter,
                                          RpcResponseConverter rpcResponseConverter,
-                                         ObjectMapper objectMapper) {
+                                         ExceptionConverter exceptionConverter) {
 
         Assert.notNull(methodParameter, "methodParameter must not be null");
         Assert.notNull(rpcResponseConverter, "responseConverter must not be null");
-        Assert.notNull(objectMapper, "objectMapper must not be null");
+        Assert.notNull(exceptionConverter, "exceptionConverter must not be null");
 
         this.methodParameter = methodParameter;
         this.rpcResponseConverter = rpcResponseConverter;
-        this.objectMapper = objectMapper;
+        this.exceptionConverter = exceptionConverter;
         this.returnValue = new CompletableFuture<>();
     }
     
@@ -45,7 +44,7 @@ public class CompletableFutureValueHandler implements RpcReturnValueHandler {
         try{
             // Error data is returned differently
             if(incomingEvent.metadata().contains(EventConstants.ERROR_HEADER)) {
-                returnValue.completeExceptionally(EventUtil.createThrowableForEventWithError(incomingEvent, objectMapper));
+                returnValue.completeExceptionally(exceptionConverter.convert(incomingEvent));
             }else{
                 returnValue.complete(rpcResponseConverter.convert(incomingEvent, methodParameter));
             }

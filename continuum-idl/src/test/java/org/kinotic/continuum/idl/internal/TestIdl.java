@@ -8,8 +8,7 @@ import org.kinotic.continuum.idl.api.schema.StringC3Type;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Created by Navíd Mitchell 🤪on 6/19/23.
@@ -20,7 +19,7 @@ public class TestIdl {
 
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JsonMapper jsonMapper;
 
     @Test
     public void testSerializeDeserializeObjectC3Type() throws Exception{
@@ -39,9 +38,9 @@ public class TestIdl {
                                              .addProperty("state", new StringC3Type())
                                              .addProperty("zip", new StringC3Type())));
 
-        String json = objectMapper.writeValueAsString(objectC3Type);
+        String json = jsonMapper.writeValueAsString(objectC3Type);
 
-        ObjectC3Type deserialized = objectMapper.readValue(json, ObjectC3Type.class);
+        ObjectC3Type deserialized = jsonMapper.readValue(json, ObjectC3Type.class);
 
         Assertions.assertEquals(objectC3Type, deserialized);
         Assertions.assertEquals(objectC3Type.getProperties(), deserialized.getProperties());

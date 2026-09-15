@@ -17,6 +17,7 @@
 
 package org.kinotic.continuum.internal.core.api.service.invoker;
 
+import lombok.Getter;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,20 +36,34 @@ import java.util.stream.IntStream;
  * {@linkplain #getMethod() method} and a {@linkplain #getBean() bean}.
  * Provides convenient access to method parameters, the method return value,
  * method annotations, etc.
- *
  * This is an adaptation of the spring-web HandlerMethod
- *
- *
  * Created by Navid Mitchell on 2019-03-25.
  */
 public class HandlerMethod {
 
     private static final Logger log = LoggerFactory.getLogger(HandlerMethod.class);
 
+    /**
+     * -- GETTER --
+     *  Return the bean for this handler method.
+     */
+    @Getter
     private final Object bean;
 
+    /**
+     * -- GETTER --
+     *  This method returns the type of the handler for this handler method.
+     *  <p>Note that if the bean type is a CGLIB-generated class, the original
+     *  user-defined class is returned.
+     */
+    @Getter
     private final Class<?> beanType;
     private final Method bridgedMethod;
+    /**
+     * -- GETTER --
+     *  Return the method for this handler method.
+     */
+    @Getter
     private final Method method;
     private final MethodParameter[] parameters;
 
@@ -63,29 +78,6 @@ public class HandlerMethod {
         this.method = method;
         this.bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
         this.parameters = initMethodParameters();
-    }
-
-    /**
-     * Return the bean for this handler method.
-     */
-    public Object getBean() {
-        return this.bean;
-    }
-
-    /**
-     * This method returns the type of the handler for this handler method.
-     * <p>Note that if the bean type is a CGLIB-generated class, the original
-     * user-defined class is returned.
-     */
-    public Class<?> getBeanType() {
-        return this.beanType;
-    }
-
-    /**
-     * Return the method for this handler method.
-     */
-    public Method getMethod() {
-        return this.method;
     }
 
     /**
@@ -155,17 +147,12 @@ public class HandlerMethod {
         catch (InvocationTargetException ex) {
             // Unwrap for HandlerExceptionResolvers ...
             Throwable targetException = ex.getTargetException();
-            if (targetException instanceof RuntimeException) {
-                throw (RuntimeException) targetException;
-            }
-            else if (targetException instanceof Error) {
-                throw (Error) targetException;
-            }
-            else if (targetException instanceof Exception) {
-                throw (Exception) targetException;
-            }
-            else {
-                throw new IllegalStateException(formatInvokeMessage("Invocation failure", args), targetException);
+            switch (targetException) {
+                case RuntimeException runtimeException -> throw runtimeException;
+                case Error error -> throw error;
+                case Exception exception -> throw exception;
+                case null, default -> throw new IllegalStateException(formatInvokeMessage("Invocation failure", args),
+                                                                      targetException);
             }
         }
     }
@@ -211,10 +198,9 @@ public class HandlerMethod {
         if (this == other) {
             return true;
         }
-        if (!(other instanceof HandlerMethod)) {
+        if (!(other instanceof HandlerMethod otherMethod)) {
             return false;
         }
-        HandlerMethod otherMethod = (HandlerMethod) other;
         return (this.bean.equals(otherMethod.bean) && this.method.equals(otherMethod.method));
     }
 

@@ -1,15 +1,23 @@
 package org.kinotic.continuum.gateway.internal.endpoints;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.ext.stomp.lite.StompServerHandlerFactory;
+import io.vertx.ext.stomp.lite.StompServerOptions;
+import io.vertx.ext.stomp.lite.StompServerVerticle;
+import io.vertx.ext.stomp.lite.StompServerVerticleFactory;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.StaticHandler;
 import org.kinotic.continuum.api.config.ContinuumProperties;
 import org.kinotic.continuum.api.security.SecurityService;
 import org.kinotic.continuum.core.api.event.EventBusService;
 import org.kinotic.continuum.gateway.api.config.ContinuumGatewayProperties;
 import org.kinotic.continuum.gateway.internal.endpoints.rest.RestServerVerticle;
-import org.kinotic.continuum.gateway.internal.endpoints.stomp.StompServerVerticle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.json.JsonMapper;
+
+import java.util.List;
 
 /**
  * Provides a factory for creating continuum end point verticles.
@@ -23,28 +31,45 @@ public class ContinuumVertcleFactory {
     private final StompServerHandlerFactory stompServerHandlerFactory;
     private final EventBusService eventService;
     private final SecurityService securityService;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
+    private final Vertx vertx;
 
     public ContinuumVertcleFactory(ContinuumProperties continuumProperties,
                                    ContinuumGatewayProperties gatewayProperties,
                                    StompServerHandlerFactory stompServerHandlerFactory,
                                    EventBusService eventService,
-                                   ObjectMapper objectMapper,
+                                   JsonMapper jsonMapper,
+                                   Vertx vertx,
                                    @Autowired(required = false) SecurityService securityService) {
         this.continuumProperties = continuumProperties;
         this.gatewayProperties = gatewayProperties;
         this.stompServerHandlerFactory = stompServerHandlerFactory;
         this.eventService = eventService;
-        this.objectMapper = objectMapper;
+        this.jsonMapper = jsonMapper;
+        this.vertx = vertx;
         this.securityService = securityService;
     }
 
     public StompServerVerticle createStompServerVerticle(){
-        return new StompServerVerticle(continuumProperties, gatewayProperties, stompServerHandlerFactory);
+        Router router = Router.router(vertx);
+        router.route().handler(StaticHandler.create("continuum-gateway-static"));
+
+        // FIXME: check CORS, see if it is protected or actually allowing any..?
+        StompServerOptions stompServerOptions = gatewayProperties.getStomp();
+
+        // we override the body length with the continuum properties
+        stompServerOptions.setMaxBodyLength(continuumProperties.getMaxEventPayloadSize());
+        HttpServerOptions serverOptions = new HttpServerOptions();
+        // as of vertx-stomp-lite 6 the stomp port is configured on the http server options
+        serverOptions.setPort(gatewayProperties.getStompPort());
+        serverOptions.setWebSocketSubProtocols(List.of("v12.stomp"));
+        serverOptions.setMaxWebSocketFrameSize(continuumProperties.getMaxEventPayloadSize());
+
+        return StompServerVerticleFactory.create(serverOptions, stompServerOptions, stompServerHandlerFactory, router);
     }
 
     public RestServerVerticle createRestServerVerticle(){
-       return new RestServerVerticle(gatewayProperties, eventService, securityService, objectMapper);
+       return new RestServerVerticle(gatewayProperties, eventService, securityService, jsonMapper);
     }
 
 }

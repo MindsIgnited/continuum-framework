@@ -17,25 +17,25 @@
 
 package org.kinotic.continuum.internal.serializer;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import org.kinotic.continuum.core.api.crud.SearchComparator;
 
-import java.io.IOException;
+import org.kinotic.continuum.core.api.crud.SearchComparator;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
 
 /**
  * Created by Navíd Mitchell 🤪 on 7/30/21.
  */
-public class SearchComparatorDeserializer extends JsonDeserializer<SearchComparator> {
+public class SearchComparatorDeserializer extends ValueDeserializer<SearchComparator> {
 
     @Override
     public SearchComparator deserialize(JsonParser jsonParser,
-                                        DeserializationContext ctxt) throws IOException {
+                                        DeserializationContext ctxt) throws JacksonException {
 
-        JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+        JsonNode node = jsonParser.objectReadContext().readTree(jsonParser);
 
-        return SearchComparator.fromStringValue(node.textValue());
+        return SearchComparator.fromStringValue(node.stringValue());
     }
 }

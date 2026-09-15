@@ -17,22 +17,22 @@
 
 package org.kinotic.continuum.internal.serializer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import org.kinotic.continuum.core.api.crud.SearchComparator;
-
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
 /**
  * Created by Navíd Mitchell 🤪 on 7/30/21.
  */
-public class SearchComparatorSerializer extends JsonSerializer<SearchComparator> {
+public class SearchComparatorSerializer extends ValueSerializer<SearchComparator> {
 
     @Override
     public void serialize(SearchComparator value,
                           JsonGenerator gen,
-                          SerializerProvider serializers) throws IOException {
+                          SerializationContext ctxt) throws JacksonException {
         gen.writeString(value.getStringValue());
     }
+
 }

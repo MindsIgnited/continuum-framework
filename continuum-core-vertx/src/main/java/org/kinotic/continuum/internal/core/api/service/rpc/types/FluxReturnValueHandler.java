@@ -17,13 +17,12 @@
 
 package org.kinotic.continuum.internal.core.api.service.rpc.types;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.kinotic.continuum.core.api.event.Event;
 import org.kinotic.continuum.core.api.event.EventConstants;
+import org.kinotic.continuum.internal.core.api.service.ExceptionConverter;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcRequest;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcResponseConverter;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcReturnValueHandler;
-import org.kinotic.continuum.internal.utils.EventUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.MethodParameter;
@@ -40,22 +39,22 @@ public class FluxReturnValueHandler implements RpcReturnValueHandler {
 
     private final MethodParameter methodParameter;
     private final RpcResponseConverter rpcResponseConverter;
-    private final ObjectMapper objectMapper;
+    private final ExceptionConverter exceptionConverter;
 
     private FluxSink<Object> fluxSink;
     private String cancelMessage = null;
 
     public FluxReturnValueHandler(MethodParameter methodParameter,
                                   RpcResponseConverter rpcResponseConverter,
-                                  ObjectMapper objectMapper) {
+                                  ExceptionConverter exceptionConverter) {
 
         Assert.notNull(methodParameter, "methodParameter must not be null");
         Assert.notNull(rpcResponseConverter, "responseConverter must not be null");
-        Assert.notNull(objectMapper, "objectMapper must not be null");
+        Assert.notNull(exceptionConverter, "exceptionConverter must not be null");
 
         this.methodParameter = methodParameter;
         this.rpcResponseConverter = rpcResponseConverter;
-        this.objectMapper = objectMapper;
+        this.exceptionConverter = exceptionConverter;
     }
 
     @Override
@@ -70,7 +69,7 @@ public class FluxReturnValueHandler implements RpcReturnValueHandler {
                 try {
                     if (incomingEvent.metadata().contains(EventConstants.ERROR_HEADER)) {
                         finished = true;
-                        fluxSink.error(EventUtil.createThrowableForEventWithError(incomingEvent, objectMapper));
+                        fluxSink.error(exceptionConverter.convert(incomingEvent));
 
                     } else if (incomingEvent.metadata().contains(EventConstants.CONTROL_HEADER)) {
 
@@ -114,7 +113,7 @@ public class FluxReturnValueHandler implements RpcReturnValueHandler {
 
                 rpcRequest.send();
 
-                fluxSink.onCancel(() -> rpcRequest.cancelRequest());
+                fluxSink.onCancel(rpcRequest::cancelRequest);
 
             }else{
                 fluxSink.error(new IllegalStateException(cancelMessage));

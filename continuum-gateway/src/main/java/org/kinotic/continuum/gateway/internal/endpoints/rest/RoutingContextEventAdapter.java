@@ -17,14 +17,15 @@
 
 package org.kinotic.continuum.gateway.internal.endpoints.rest;
 
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.ext.web.RoutingContext;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.Validate;
 import org.kinotic.continuum.core.api.event.CRI;
 import org.kinotic.continuum.core.api.event.Event;
 import org.kinotic.continuum.core.api.event.Metadata;
 import org.kinotic.continuum.internal.core.api.event.MultiMapMetadataAdapter;
+
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.ext.web.RoutingContext;
 
 /**
  *
@@ -50,7 +51,7 @@ class RoutingContextEventAdapter implements Event<byte[]> {
         // Path provided will be like ex:
         // http://localhost/api/srv/org.kinotic.testapplication.services.TestService/getFreeMemory
 
-        String pathWithoutRoot = StringUtils.removeStart(routingContext.request().path(), rootPath);
+        String pathWithoutRoot = Strings.CS.removeStart(routingContext.request().path(), rootPath);
         Validate.notBlank(pathWithoutRoot, "Path must be provided and point to a valid service");
         pathWithoutRoot = pathWithoutRoot.substring(1); // remove leading slash
         pathWithoutRoot = pathWithoutRoot.replaceFirst("/","://");

@@ -17,10 +17,10 @@
 
 package org.kinotic.continuum.idl.api.schema;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.*;
 import lombok.experimental.Accessors;
 import org.apache.commons.lang3.Validate;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 import java.util.LinkedHashSet;
 import java.util.LinkedList;

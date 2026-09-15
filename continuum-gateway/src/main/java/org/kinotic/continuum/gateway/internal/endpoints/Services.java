@@ -17,19 +17,19 @@
 
 package org.kinotic.continuum.gateway.internal.endpoints;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Vertx;
 import org.kinotic.continuum.api.Continuum;
 import org.kinotic.continuum.api.config.ContinuumProperties;
+import org.kinotic.continuum.api.security.SecurityService;
 import org.kinotic.continuum.core.api.event.EventBusService;
 import org.kinotic.continuum.core.api.event.EventStreamService;
-import org.kinotic.continuum.api.security.SecurityService;
 import org.kinotic.continuum.core.api.security.SessionManager;
 import org.kinotic.continuum.gateway.api.config.ContinuumGatewayProperties;
 import org.kinotic.continuum.gateway.internal.endpoints.stomp.DefaultStompServerHandler;
-import org.kinotic.continuum.internal.core.api.service.invoker.ExceptionConverter;
+import org.kinotic.continuum.internal.core.api.service.ExceptionConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Facade class to make it easier to get needed services into {@link DefaultStompServerHandler}
@@ -51,7 +51,7 @@ public class Services {
     @Autowired
     public ExceptionConverter exceptionConverter;
     @Autowired
-    public ObjectMapper objectMapper;
+    public JsonMapper jsonMapper;
     @Autowired
     public SecurityService securityService;
     @Autowired

@@ -29,7 +29,7 @@ import org.kinotic.continuum.core.api.service.ServiceDescriptor;
 import org.kinotic.continuum.core.api.service.ServiceFunctionInstanceProvider;
 import org.kinotic.continuum.core.api.service.ServiceIdentifier;
 import org.kinotic.continuum.internal.core.api.service.invoker.ArgumentResolverComposite;
-import org.kinotic.continuum.internal.core.api.service.invoker.ExceptionConverterComposite;
+import org.kinotic.continuum.internal.core.api.service.ExceptionConverterComposite;
 import org.kinotic.continuum.internal.core.api.service.invoker.ReturnValueConverterComposite;
 import org.kinotic.continuum.internal.core.api.service.invoker.ServiceInvocationSupervisor;
 import org.kinotic.continuum.internal.core.api.service.rpc.DefaultRpcServiceProxyHandle;

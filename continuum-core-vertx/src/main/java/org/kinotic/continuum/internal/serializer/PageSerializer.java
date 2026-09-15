@@ -17,39 +17,41 @@
 
 package org.kinotic.continuum.internal.serializer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+
 import org.kinotic.continuum.core.api.crud.CursorPage;
 import org.kinotic.continuum.core.api.crud.Page;
-
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
 /**
  *
  * Created by navid on 2/4/20
  */
 @SuppressWarnings("rawtypes")
-public class PageSerializer extends JsonSerializer<Page> {
+public class PageSerializer extends ValueSerializer<Page> {
 
     @Override
-    public void serialize(Page page, JsonGenerator jsonGenerator, SerializerProvider serializers) throws IOException {
+    public void serialize(Page page,
+                          JsonGenerator jsonGenerator,
+                          SerializationContext ctxt) throws JacksonException {
         jsonGenerator.writeStartObject();
 
         if(page.getTotalElements() != null){
-            jsonGenerator.writeNumberField("totalElements", page.getTotalElements());
+            jsonGenerator.writeNumberProperty("totalElements", page.getTotalElements());
         }else{
-            jsonGenerator.writeNullField("totalElements");
+            jsonGenerator.writeNullProperty("totalElements");
         }
 
-        jsonGenerator.writeArrayFieldStart("content");
+        jsonGenerator.writeArrayPropertyStart("content");
         for (Object value: page.getContent()) {
-            jsonGenerator.writeObject(value);
+            jsonGenerator.writePOJO(value);
         }
         jsonGenerator.writeEndArray();
 
         if(page instanceof CursorPage) {
-            jsonGenerator.writeStringField("cursor", ((CursorPage) page).getCursor());
+            jsonGenerator.writeStringProperty("cursor", ((CursorPage) page).getCursor());
         }
 
         jsonGenerator.writeEndObject();

@@ -15,7 +15,6 @@ dependencies {
     implementation 'commons-io:commons-io'
     implementation 'org.springframework:spring-core'
     implementation 'org.springframework:spring-context'
-    implementation 'javax.annotation:javax.annotation-api'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'

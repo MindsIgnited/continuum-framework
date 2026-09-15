@@ -17,13 +17,10 @@
 
 package org.kinotic.continuum.internal.core.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.TokenBuffer;
 import io.vertx.core.Future;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.kinotic.continuum.api.Continuum;
 import org.kinotic.continuum.api.exceptions.RpcInvocationException;
 import org.kinotic.continuum.api.exceptions.RpcMissingMethodException;
@@ -32,24 +29,23 @@ import org.kinotic.continuum.internal.core.api.support.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.util.function.Tuple2;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.util.TokenBuffer;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
  *
  * Created by navid on 10/30/19
  */
-@ExtendWith(SpringExtension.class)
 @SpringBootTest
 @ActiveProfiles({"test"})
 public class RpcTests {
@@ -64,10 +60,10 @@ public class RpcTests {
     private RpcTestServiceProxy rpcTestServiceProxy;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JsonMapper jsonMapper;
 
     // TODO: test to few arguments, and too many arguments, also a variation with the participant. Participant variant error message may be misleading?
-    // See org.kinotic.continuum.internal.core.api.service.json.AbstractJackson2Support Line 114, Line 180. Should we keep the number of participant args in mind.
+    // See org.kinotic.continuum.internal.core.api.service.json.AbstractJacksonSupport Line 114, Line 180. Should we keep the number of participant args in mind.
 
     @Test
     public void testABunchOfArguments(){
@@ -81,6 +77,18 @@ public class RpcTests {
 
         StepVerifier.create(mono)
                     .expectNext(argumentsHolder)
+                    .expectComplete()
+                    .verify();
+    }
+
+    @Test
+    public void testSendTwoArgsReturnOne(){
+        String lhs = "Hello ";
+        String rhs = "Wat";
+        Mono<String> mono = rpcTestServiceProxy.concatString(lhs, rhs);
+
+        StepVerifier.create(mono)
+                    .expectNext(lhs + rhs)
                     .expectComplete()
                     .verify();
     }
@@ -360,9 +368,9 @@ public class RpcTests {
 
     @Test
     public void testSendTokenBuffer() throws IOException {
-        try (TokenBuffer tokenBuffer = new TokenBuffer(objectMapper, false)) {
+        try (TokenBuffer tokenBuffer = new TokenBuffer(jsonMapper._serializationContext(), false)) {
             tokenBuffer.writeStartObject();
-            tokenBuffer.writeStringField("test", "Hello Sucka");
+            tokenBuffer.writeStringProperty("test", "Hello Sucka");
             tokenBuffer.writeEndObject();
 
             Mono<String> mono = rpcTestServiceProxy.echoTokenBuffer(tokenBuffer);

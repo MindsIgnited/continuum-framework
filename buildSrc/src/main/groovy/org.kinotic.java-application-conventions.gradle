@@ -21,16 +21,51 @@ dependencies {
 
 // Options to configure here https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/#build-image
 // bootBuildImage task source https://github.com/spring-projects/spring-boot/blob/main/spring-boot-project/spring-boot-tools/spring-boot-gradle-plugin/src/main/java/org/springframework/boot/gradle/tasks/bundling/BootBuildImage.java
+
+// Full --add-opens set recommended by Apache Ignite for JDK 11+
+// https://ignite.apache.org/docs/latest/quick-start/java#running-ignite-with-java-11-or-later
+// A missing entry surfaces at runtime as InaccessibleObjectException during Ignite marshalling
+def igniteAddOpens = [
+		'java.base/jdk.internal.access',
+		'java.base/jdk.internal.misc',
+		'java.base/sun.nio.ch',
+		'java.base/sun.util.calendar',
+		'java.management/com.sun.jmx.mbeanserver',
+		'jdk.internal.jvmstat/sun.jvmstat.monitor',
+		'java.base/sun.reflect.generics.reflectiveObjects',
+		'jdk.management/com.sun.management.internal',
+		'java.base/java.io',
+		'java.base/java.nio',
+		'java.base/java.net',
+		'java.base/java.util',
+		'java.base/java.util.concurrent',
+		'java.base/java.util.concurrent.locks',
+		'java.base/java.util.concurrent.atomic',
+		'java.base/java.lang',
+		'java.base/java.lang.invoke',
+		'java.base/java.lang.reflect',
+		'java.base/java.math',
+		'java.sql/java.sql',
+		'java.base/java.time',
+		'java.base/java.text',
+		'java.management/sun.management',
+		'java.desktop/java.awt.font'
+].collect { "--add-opens=${it}=ALL-UNNAMED" }.join(' ')
+
 bootBuildImage {
 	network = "host"
-	publish = !version.endsWith('SNAPSHOT')
-	imageName = "kinoticai/${project.name}:${project.version}"
-	tags = [
-			"kinoticai/${project.name}:latest"
-	]
+	// Local builds only produce the image; CI publishes by passing --publishImage
+	publish = false
+	imageName = "mindsignited/${project.name}:${project.version}"
+	// Only release versions (no -SNAPSHOT / -prN.sha suffix) may claim the latest tag
+	tags = (!version.contains('-') ?
+			[
+					"mindsignited/${project.name}:latest"
+			]
+			: [])
 	environment = [
 			"BPE_DELIM_JAVA_TOOL_OPTIONS" : " ",
-			"BPE_APPEND_JAVA_TOOL_OPTIONS" : "-XX:+UseG1GC -XX:+ScavengeBeforeFullGC -XX:+DisableExplicitGC --add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED --add-opens=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED --add-opens=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED-XX:+UseG1GC -XX:+ScavengeBeforeFullGC -XX:+DisableExplicitGC --add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED --add-opens=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED --add-opens=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED"
+			"BPE_APPEND_JAVA_TOOL_OPTIONS" : "-XX:+UseG1GC -XX:+ScavengeBeforeFullGC -XX:+DisableExplicitGC ${igniteAddOpens}".toString()
 	]
 	docker {
 		publishRegistry {
@@ -44,14 +79,15 @@ bootBuildImage {
  * The following should be configured on launch as well
  * 		"--spring.profiles.active=production"
  */
-// These properties
-applicationDefaultJvmArgs = [
-		"-Djava.awt.headless=true",
-		"-Djava.net.preferIPv4Stack=true",
-		"-Dvertx.disableDnsResolver=true", // done because of this issue.. https://github.com/eclipse/vert.x/issues/1753 http://stackoverflow.com/questions/42110790/vertx-httpclient-getnow-not-working
-		"-server",
-		"-XX:+AlwaysPreTouch",
-		"-XX:+UseG1GC",
-		"-XX:+ScavengeBeforeFullGC",
-		"-XX:+DisableExplicitGC"
-]
+application {
+    applicationDefaultJvmArgs = [
+            "-Djava.awt.headless=true",
+            "-Djava.net.preferIPv4Stack=true",
+            "-Dvertx.disableDnsResolver=true", // done because of this issue.. https://github.com/eclipse/vert.x/issues/1753 http://stackoverflow.com/questions/42110790/vertx-httpclient-getnow-not-working
+            "-server",
+            "-XX:+AlwaysPreTouch",
+            "-XX:+UseG1GC",
+            "-XX:+ScavengeBeforeFullGC",
+            "-XX:+DisableExplicitGC"
+    ]
+}

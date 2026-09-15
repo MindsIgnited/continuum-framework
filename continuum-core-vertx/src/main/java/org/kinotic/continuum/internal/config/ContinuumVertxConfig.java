@@ -25,9 +25,9 @@ import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.spi.cluster.ignite.IgniteClusterManager;
 import org.apache.ignite.Ignite;
 import org.kinotic.continuum.api.config.ContinuumProperties;
+import org.kinotic.continuum.internal.ContinuumIgniteClusterManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -47,14 +47,14 @@ public class ContinuumVertxConfig {
             value="continuum.disableClustering",
             havingValue = "false",
             matchIfMissing = true)
-    public ClusterManager clusterManager(Ignite ignite){
+    public ContinuumIgniteClusterManager clusterManager(Ignite ignite){
         if(ignite == null){
             throw new IllegalStateException("Something is wrong with the configuration Ignite is null");
         }
         // make sure clustering is enabled
         System.setProperty("vertx.clustered","true");
 
-        return new IgniteClusterManager(ignite);
+        return new ContinuumIgniteClusterManager(ignite);
     }
 
     @Bean
@@ -87,7 +87,9 @@ public class ContinuumVertxConfig {
             if(properties.getEventBusClusterPublicPort() != -1) {
                 eventBusOptions.setClusterPublicPort(properties.getEventBusClusterPublicPort());
             }
-            eventBusOptions.setClusterPublicHost(properties.getEventBusClusterPublicHost());
+            if(properties.getEventBusClusterPublicHost() != null) {
+                eventBusOptions.setClusterPublicHost(properties.getEventBusClusterPublicHost());
+            }
 
             VertxOptions options = new VertxOptions()
                     .setEventBusOptions(eventBusOptions);

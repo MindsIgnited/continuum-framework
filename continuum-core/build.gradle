@@ -16,8 +16,6 @@ dependencies {
     // To include When.MAYBE to get rid of message
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
 
-    implementation 'javax.annotation:javax.annotation-api'
-
     // JSON
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
 }

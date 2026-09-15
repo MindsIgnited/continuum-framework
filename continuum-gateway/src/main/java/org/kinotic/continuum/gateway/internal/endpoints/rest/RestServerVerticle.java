@@ -17,7 +17,6 @@
 
 package org.kinotic.continuum.gateway.internal.endpoints.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.Promise;
@@ -45,6 +44,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -65,7 +65,7 @@ public class RestServerVerticle extends AbstractVerticle {
     private final ContinuumGatewayProperties gatewayProperties;
     private final EventBusService eventService;
     private final SecurityService securityService;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
     private Scheduler scheduler;
 
@@ -94,7 +94,7 @@ public class RestServerVerticle extends AbstractVerticle {
 
         // will ensure body is available
         restRoute.handler(BodyHandler.create()
-                 .setBodyLimit(gatewayProperties.getRest().getBodyLimitSize()));
+                                     .setBodyLimit(gatewayProperties.getRest().getBodyLimitSize()));
 
         // will dispatch to event service
         restRoute.handler(routingContext -> {
@@ -111,7 +111,7 @@ public class RestServerVerticle extends AbstractVerticle {
 
                 Participant participant = routingContext.get(EventConstants.SENDER_HEADER);
                 if(participant != null){
-                    requestEvent.metadata().put(EventConstants.SENDER_HEADER, objectMapper.writeValueAsString(participant));
+                    requestEvent.metadata().put(EventConstants.SENDER_HEADER, jsonMapper.writeValueAsString(participant));
                 }
 
                 // now send event to invoke remote service
@@ -137,29 +137,30 @@ public class RestServerVerticle extends AbstractVerticle {
         Mono<Flux<Event<byte[]>>> eventMono = eventService.listenWithAck(replyDestination)
                                                           .publishOn(scheduler);
         eventMono.subscribe(eventFlux -> {
-            disposable =
-                eventFlux.publishOn(scheduler)
-                         .subscribe(this::processResponseEvent, // will be called on response event
-                                    // received error
-                                    throwable -> log.error("Event listener error", throwable),
-                                    // listener completed
-                                    () -> {
-                                        log.error("Should not happen! Event listener stopped for some reason!!");
-                                    });
+                                disposable =
+                                        eventFlux.publishOn(scheduler)
+                                                 .subscribe(this::processResponseEvent, // will be called on response event
+                                                            // received error
+                                                            throwable -> log.error("Event listener error", throwable),
+                                                            // listener completed
+                                                            () -> {
+                                                                log.error("Should not happen! Event listener stopped for some reason!!");
+                                                            });
 
-            // now that response listener is active start http server to handle incoming requests
-            httpServer.requestHandler(router)
-                      .listen(gatewayProperties.getRest().getPort(), ar -> {
-                          if (ar.succeeded()) {
-                              log.info("REST Server Listening on port "+ ar.result().actualPort());
-                              startPromise.complete();
-                          } else {
-                              log.error("Error starting REST Server", ar.cause());
-                              startPromise.fail(ar.cause());
-                          }
-                      });
-        },
-        startPromise::fail);
+                                // now that response listener is active start http server to handle incoming requests
+                                httpServer.requestHandler(router)
+                                          .listen(gatewayProperties.getRest().getPort())
+                                          .onComplete(ar -> {
+                                              if (ar.succeeded()) {
+                                                  log.info("REST Server Listening on port "+ ar.result().actualPort());
+                                                  startPromise.complete();
+                                              } else {
+                                                  log.error("Error starting REST Server", ar.cause());
+                                                  startPromise.fail(ar.cause());
+                                              }
+                                          });
+                            },
+                            startPromise::fail);
     }
 
 
@@ -189,7 +190,7 @@ public class RestServerVerticle extends AbstractVerticle {
 
                 context.response().end();
             }else{
-                log.error("Received RPC response for "+EventConstants.CORRELATION_ID_HEADER+": "+id + " but no context is set");
+                log.error("Received RPC response for " + EventConstants.CORRELATION_ID_HEADER + ": {} but no context is set", id);
             }
         }else{
             log.error("Received RPC response that does not contain a "+EventConstants.CORRELATION_ID_HEADER+" header");
@@ -197,7 +198,7 @@ public class RestServerVerticle extends AbstractVerticle {
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         httpServer.close();
         disposable.dispose();
     }

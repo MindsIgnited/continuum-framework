@@ -3,7 +3,7 @@
     debug: true
     disableClustering: false
     cluster:
-      discoveryType: LOCAL
+      discoveryType: SHAREDFS
       joinTimeoutMs: 0
       discoveryPort: 47500
       communicationPort: 47501
@@ -15,8 +15,6 @@
   logging:
     level:
       org:
-        kinotic: TRACE
+        kinotic: DEBUG
       io:
-        vertx:
-          ext:
-            stomp: DEBUG
+        vertx: DEBUG

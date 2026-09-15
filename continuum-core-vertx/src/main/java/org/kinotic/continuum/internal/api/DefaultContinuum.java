@@ -16,21 +16,11 @@
  */
 
 package org.kinotic.continuum.internal.api;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
-import javax.annotation.PreDestroy;
-
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.spi.cluster.ClusterManager;
+import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.text.WordUtils;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -55,12 +45,20 @@ import org.springframework.core.ReactiveTypeDescriptor;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.stereotype.Component;
-
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.spi.cluster.ClusterManager;
 import reactor.core.publisher.Mono;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 
 /**
@@ -203,10 +201,14 @@ public class DefaultContinuum implements Continuum {
         return serverInfo;
     }
 
+
+    /**
+     * Properly shutdown vertx instance on application shutdown
+     * Waiting up to 2 minutes for shutdown to complete
+     */
     @PreDestroy
-    public void shutdown(){
-        Promise<Void> promise = Promise.promise();
-        vertx.close(promise);
-        Awaitility.await().atMost(2, TimeUnit.MINUTES).until(() -> promise.future().isComplete());
+    public void shutdown() {
+        Future<?> future = vertx.close();
+        Awaitility.await().atMost(2, TimeUnit.MINUTES).until(future::isComplete);
     }
 }

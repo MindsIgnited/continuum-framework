@@ -1,4 +1,4 @@
-name: Build and Deploy Continuum Website
+name: Build and Deploy Kinotic Website
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
           cd website/continuum-vitepress
           pnpm install
 
-      - name: Build Structures site
+      - name: Build Continuum site
         run: |
           cd website/continuum-vitepress
           pnpm docs:build
@@ -45,4 +45,4 @@ jobs:
           publish_dir: website/continuum-vitepress/src/.vitepress/dist
           publish_branch: gh-pages
           destination_dir: website
-          keep_files: true
+          keep_files: false

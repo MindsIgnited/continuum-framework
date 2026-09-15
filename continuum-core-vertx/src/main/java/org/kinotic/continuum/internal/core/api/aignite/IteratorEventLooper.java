@@ -18,7 +18,7 @@
 package org.kinotic.continuum.internal.core.api.aignite;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,48 +101,40 @@ public class IteratorEventLooper<T> implements Handler<Void>, SuspendableObserve
 
             if (iterator.hasNext()) {
 
-                creatingContext.executeBlocking(future -> {
-                    try {
+                creatingContext
+                        .executeBlocking(() -> iterator.next())
+                        .onComplete(future -> {
 
-                        T entry = iterator.next();
+                            // Did iterator.next() complete properly
+                            if (future.succeeded()) {
 
-                        future.complete(entry);
+                                T value = future.result();
+                                // Call handler on its context
+                                creatingContext.runOnContext(ce -> {
+                                    try {
 
-                    } catch (Exception e) {
-                        future.fail(e);
-                    }
-                }, (Handler<AsyncResult<T>>) future -> {
+                                        dataHandler.handle(value);
 
-                    // Did iterator.next() complete properly
-                    if (future.succeeded()) {
+                                        // No exceptions then process the next entry
+                                        doLoop();
 
-                        T value = future.result();
-                        // Call handler on its context
-                        creatingContext.runOnContext(ce -> {
-                            try {
+                                    } catch (Exception e) {
+                                        log.warn("IteratorEventLooper's data handler threw an error {}", e.getMessage());
+                                        log.warn("Terminating IteratorEventLooper!");
 
-                                dataHandler.handle(value);
-
-                                // No exceptions then process the next entry
-                                doLoop();
-
-                            } catch (Exception e) {
-                                log.warn("IteratorEventLooper's data handler threw an error " + e.getMessage());
-                                log.warn("Terminating IteratorEventLooper!");
-
+                                        close();
+                                        if (exceptionHandler != null) {
+                                            creatingContext.runOnContext(vv -> exceptionHandler.handle(e));
+                                        }
+                                    }
+                                });
+                            } else {
                                 close();
                                 if (exceptionHandler != null) {
-                                    creatingContext.runOnContext(vv -> exceptionHandler.handle(e));
+                                    creatingContext.runOnContext(vv -> exceptionHandler.handle(future.cause()));
                                 }
                             }
                         });
-                    } else {
-                        close();
-                        if (exceptionHandler != null) {
-                            creatingContext.runOnContext(vv -> exceptionHandler.handle(future.cause()));
-                        }
-                    }
-                });
             } else {
                 close();
                 if (completionHandler != null) {
@@ -173,13 +165,13 @@ public class IteratorEventLooper<T> implements Handler<Void>, SuspendableObserve
     }
 
     @Override
-    public void close(Promise<Void> completion) {
+    public void close(Completable<Void> completion) {
         closed.set(true);
         iterator = null;
 
         if (completion != null) {
             Context context = vertx.getOrCreateContext();
-            context.runOnContext(v -> completion.handle(Future.succeededFuture()));
+            context.runOnContext(v -> completion.succeed());
         }
 
         if (creatingContext != null) {

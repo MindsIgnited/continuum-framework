@@ -18,14 +18,12 @@
 package org.kinotic.continuum.api;
 
 import org.kinotic.continuum.api.annotations.EnableContinuum;
-import org.kinotic.continuum.api.annotations.Publish;
 
 /**
  * Contains information about this Continuum process
  *
  * Created by navid on 9/24/19
  */
-@Publish
 public interface Continuum {
 
     /**

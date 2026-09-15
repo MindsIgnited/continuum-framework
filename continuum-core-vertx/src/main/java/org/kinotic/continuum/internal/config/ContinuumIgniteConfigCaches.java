@@ -17,6 +17,7 @@
 
 package org.kinotic.continuum.internal.config;
 
+import org.apache.ignite.cache.CacheAtomicityMode;
 import org.kinotic.continuum.api.config.ContinuumProperties;
 import org.kinotic.continuum.core.api.security.SessionMetadata;
 import org.kinotic.continuum.internal.core.api.security.DefaultSessionMetadata;
@@ -64,15 +65,27 @@ public class ContinuumIgniteConfigCaches {
         return cacheConfiguration;
     }
 
+    // Cache configs below come from the vertx cluster manager default-ignite.json we do this here so we can modify the ignite config as well.
     @Bean
     CacheConfiguration<?, ?> vertxCacheConfigTemplate(){
-        // This comes from the vertx cluster manager default.ignite.xml we do this here so we can modify the ignite config as well..
+        CacheConfiguration<?, ?> cacheConfiguration = new CacheConfiguration<>();
+        cacheConfiguration.setName("__vertx.*");
+        cacheConfiguration.setCacheMode(CacheMode.REPLICATED);
+        cacheConfiguration.setAtomicityMode(CacheAtomicityMode.ATOMIC);
+        cacheConfiguration.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+
+        return cacheConfiguration;
+    }
+
+    @Bean
+    CacheConfiguration<?, ?> vertxGenericCacheConfigTemplate(){
         CacheConfiguration<?, ?> cacheConfiguration = new CacheConfiguration<>();
         cacheConfiguration.setName("*");
         cacheConfiguration.setCacheMode(CacheMode.PARTITIONED);
         cacheConfiguration.setBackups(1);
         cacheConfiguration.setReadFromBackup(false);
-        cacheConfiguration.setWriteSynchronizationMode(CacheWriteSynchronizationMode.PRIMARY_SYNC);
+        cacheConfiguration.setAtomicityMode(CacheAtomicityMode.ATOMIC);
+        cacheConfiguration.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
 
         return cacheConfiguration;
     }

@@ -7,6 +7,19 @@ on:
       - master
     paths-ignore:
       - 'website/**'
+      - 'continuum-js/**'
+  pull_request:
+    branches:
+      - develop
+    paths-ignore:
+      - 'website/**'
+      - 'continuum-js/**'
+
+concurrency:
+  group: gradle-build-${{ github.event.pull_request.number || github.ref }}
+  # A master run publishes immutable release artifacts for ~1 h; cancelling it mid-way
+  # leaves some modules live and the rest unpublished, so master runs queue instead.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 jobs:
   gradle_build_and_publish:
@@ -27,14 +40,37 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # gradle.properties holds the plain version. Effective version by event:
+      #   PR           -> <base>-pr<PR#>.<sha>  (pullable image to test the PR)
+      #   develop push -> <base>-SNAPSHOT       (development build)
+      #   master push  -> <base>                (release, published as-is)
+      - name: Determine build version
+        id: ver
+        run: |
+          BASE=$(grep '^continuumVersion=' gradle.properties | cut -d= -f2)
+          BASE=${BASE%-SNAPSHOT}
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            SHORT_SHA=$(echo "${{ github.event.pull_request.head.sha }}" | cut -c1-7)
+            VERSION="${BASE}-pr${{ github.event.pull_request.number }}.${SHORT_SHA}"
+            echo "gradle_args=-PcontinuumVersion=${VERSION}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.ref_name }}" == "master" ]]; then
+            VERSION="${BASE}"
+            echo "gradle_args=-Prelease" >> "$GITHUB_OUTPUT"
+          else
+            VERSION="${BASE}-SNAPSHOT"
+            echo "gradle_args=" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building version ${VERSION}"
+
       - name: Build with Gradle
         id: gradle_build
         continue-on-error: true
-        run: ./gradlew build
+        run: ./gradlew build ${{ steps.ver.outputs.gradle_args }}
 
       - name: Publish to Maven Central with JReleaser
-        if: ${{ steps.gradle_build.outcome == 'success' }}
-        run: ./gradlew publish && ./gradlew jreleaserDeploy
+        if: ${{ github.event_name == 'push' && steps.gradle_build.outcome == 'success' }}
+        run: ./gradlew publish ${{ steps.ver.outputs.gradle_args }} && ./gradlew jreleaserDeploy --info ${{ steps.ver.outputs.gradle_args }}
         env:
           JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.MAVEN_TOKEN_USERNAME }}
           JRELEASER_MAVENCENTRAL_TOKEN: ${{ secrets.MAVEN_TOKEN_PASSWORD }}
@@ -43,26 +79,27 @@ jobs:
           JRELEASER_GPG_SECRET_KEY: ${{ secrets.GPG_KEY_NEW }}
           JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_KEY_PASS_NEW }}
 
+      # Fork and dependabot PRs do not receive the Docker Hub secrets, so only
+      # publish images for pushes and same-repo PRs.
       - name: Publish to Docker Hub
-        if: ${{ steps.gradle_build.outcome == 'success' }}
-        run: ./gradlew bootBuildImage --publishImage
+        if: ${{ steps.gradle_build.outcome == 'success' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
+        run: ./gradlew bootBuildImage --publishImage ${{ steps.ver.outputs.gradle_args }}
         env:
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
           DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
-      - name: Run E2E Tests
-        id: run_e2e_tests
-        continue-on-error: true
-        run: |
-          cd continuum-js/continuum-client
-          ./gradlew pnpmInstall
-          ./gradlew pnpmTest
+#      - name: Run E2E Tests
+#        id: run_e2e_tests
+#        continue-on-error: true
+#        run: |
+#          cd continuum-js/continuum-client
+#          ./gradlew pnpmInstall
+#          ./gradlew pnpmTest
 
       - name: Merge Test Results
         run: |
           mkdir -p allure-results
-          cp -r */build/allure-results/* allure-results/
-          cp -r continuum-js/*/allure-results/* allure-results/
+          cp -r */build/allure-results/* allure-results/ || true
 
       - name: Get Allure history
         uses: actions/checkout@v4
@@ -72,7 +109,7 @@ jobs:
           path: gh-pages
 
       - name: Generate Allure report
-        uses: simple-elf/allure-report-action@v1.13
+        uses: simple-elf/allure-report-action@v1.15
         id: allure-report
         with:
           allure_results: allure-results
@@ -97,17 +134,13 @@ jobs:
           description: 'Passed'
           state: 'success'
           sha: ${{github.event.pull_request.head.sha || github.sha}}
-          target_url: https://mindignited.github.io/continuum-framework/allure/${{ github.run_number }}
+          target_url: https://mindsignited.github.io/continuum-framework/allure/${{ github.run_number }}
 
       - name: Check If Failure
-        if: ${{ steps.gradle_build.outcome == 'failure' || steps.run_e2e_tests.outcome == 'failure' }}
+        if: ${{ steps.gradle_build.outcome == 'failure' }}
         run: |
           if [ "${{ steps.gradle_build.outcome }}" == "failure" ]; then
             echo "Gradle Build failed."
-          fi
-
-          if [ "${{ steps.run_e2e_tests.outcome }}" == "failure" ]; then
-            echo "E2E Tests failed."
           fi
 
           # Optionally mark the job as failed

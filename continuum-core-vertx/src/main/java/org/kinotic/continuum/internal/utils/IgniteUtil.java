@@ -160,7 +160,10 @@ public class IgniteUtil {
         Validate.notNull(vertx, "Vertx must not be null");
         Validate.notNull(igniteCache, "The IgniteCache provided must not be null");
 
-        Scheduler scheduler = Schedulers.fromExecutor(command -> vertx.executeBlocking(v -> command.run(), null));
+        Scheduler scheduler = Schedulers.fromExecutor(command -> vertx.executeBlocking(() -> {
+            command.run();
+            return null;
+        }));
 
         Flux<Long> ret = Flux.create(sink -> {
             AtomicLong activeSessionsCount = new AtomicLong();
@@ -187,13 +190,14 @@ public class IgniteUtil {
             qry.setRemoteFilterFactory((Factory<CacheEntryEventFilter<K, V>>)
                                                () -> event -> event.getEventType() != EventType.UPDATED);
 
-            qry.setLocalListener(events -> vertxContext.executeBlocking(v ->{
+            qry.setLocalListener(events -> vertxContext.executeBlocking(() ->{
                 for(Long change  : events){
                     if(!sink.isCancelled()) {
                         sink.next(activeSessionsCount.addAndGet(change));
                     }
                 }
-            }, null));
+                return null;
+            }));
 
             // Executing the query.
             QueryCursor<Cache.Entry<K, V>> cursor = null;

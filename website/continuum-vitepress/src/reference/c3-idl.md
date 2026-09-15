@@ -2,7 +2,7 @@
 
 ## Overview
 
-The C3 Interface Definition Language (IDL) is a schema language within the Continuum platform from Kinotic. It's used for defining and managing data types to ensure interoperability and smooth integration across different system components by offering a structured method for defining complex data types and their properties.
+The C3 Interface Definition Language (IDL) is a schema language within the Continuum platform from Mind Ignited. It's used for defining and managing data types to ensure interoperability and smooth integration across different system components by offering a structured method for defining complex data types and their properties.
 
 ## Core Components
 

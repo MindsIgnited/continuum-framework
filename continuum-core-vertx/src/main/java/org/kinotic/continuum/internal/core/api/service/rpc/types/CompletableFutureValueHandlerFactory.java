@@ -1,6 +1,6 @@
 package org.kinotic.continuum.internal.core.api.service.rpc.types;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.kinotic.continuum.internal.core.api.service.ExceptionConverter;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcResponseConverter;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcReturnValueHandler;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcReturnValueHandlerFactory;
@@ -22,12 +22,12 @@ public class CompletableFutureValueHandlerFactory implements RpcReturnValueHandl
     private static final Logger log = LoggerFactory.getLogger(CompletableFutureValueHandlerFactory.class);
 
     private final RpcResponseConverter rpcResponseConverter;
-    private final ObjectMapper objectMapper;
+    private final ExceptionConverter exceptionConverter;
 
     public CompletableFutureValueHandlerFactory(RpcResponseConverter rpcResponseConverter,
-                                                ObjectMapper objectMapper) {
+                                                ExceptionConverter exceptionConverter) {
         this.rpcResponseConverter = rpcResponseConverter;
-        this.objectMapper = objectMapper;
+        this.exceptionConverter = exceptionConverter;
     }
 
     @Override
@@ -47,6 +47,6 @@ public class CompletableFutureValueHandlerFactory implements RpcReturnValueHandl
     public RpcReturnValueHandler createReturnValueHandler(Method method, Object... args) {
         return new CompletableFutureValueHandler(new MethodParameter(method, -1),
                                                  rpcResponseConverter,
-                                                 objectMapper);
+                                                 exceptionConverter);
     }
 }

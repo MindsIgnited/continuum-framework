@@ -21,11 +21,11 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: ' https://github.com/Kinotic-Foundation/continuum-framework' }
+      { icon: 'github', link: ' https://github.com/mindsignited/continuum-framework' }
     ],
     footer: {
       message: 'Released under the Apache License.',
-      copyright: 'Copyright © 2018-present Kinotic Foundation'
+      copyright: 'Copyright © 2010-present Mind Ignited'
     }
   }
 })
@@ -40,7 +40,7 @@ function nav() {
     },
     {
       text: 'Test Status',
-      link: 'https://kinotic-foundation.github.io/continuum-framework/allure' // Fully qualified URL
+      link: 'https://mindsignited.github.io/continuum-framework/allure' // Fully qualified URL
     }
   ]
 }
@@ -85,7 +85,7 @@ function sidebarReference() {
     {
       text: 'API',
       items: [
-        { text: 'Javadoc', link: '/reference/javadoc' }
+        { text: 'Javadoc', link: 'https://www.javadoc.io/doc/org.mindsignited/continuum-core' }
       ]
     }
   ]

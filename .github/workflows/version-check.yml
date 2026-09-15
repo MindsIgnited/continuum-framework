@@ -1,0 +1,54 @@
+name: Version Check
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  require_version_bump:
+    name: Require version bump
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compare version with base branch
+        run: |
+          HEAD_VERSION=$(grep '^continuumVersion=' gradle.properties | cut -d= -f2)
+
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          BASE_VERSION=$(git show "origin/${{ github.base_ref }}:gradle.properties" | grep '^continuumVersion=' | cut -d= -f2)
+
+          # The numeric core ignores any pre-release suffix (-SNAPSHOT, -rc1, ...)
+          HEAD_CORE=${HEAD_VERSION%%-*}
+          BASE_CORE=${BASE_VERSION%%-*}
+
+          echo "Base (${{ github.base_ref }}): ${BASE_VERSION}"
+          echo "Head: ${HEAD_VERSION}"
+
+          fail() { echo "::error::$1"; exit 1; }
+
+          if [[ "${HEAD_CORE}" == "${BASE_CORE}" ]]; then
+            if [[ "${HEAD_VERSION}" == "${BASE_VERSION}" ]]; then
+              fail "continuumVersion is still ${HEAD_VERSION}; bump it in gradle.properties before merging to ${{ github.base_ref }} (releases are immutable in Maven Central)"
+            elif [[ "${HEAD_VERSION}" == "${HEAD_CORE}" ]]; then
+              # pre-release -> release promotion of the same version (e.g. 3.6.0-rc1 -> 3.6.0)
+              echo "Version promotion OK: ${BASE_VERSION} -> ${HEAD_VERSION}"
+            elif [[ "${BASE_VERSION}" == "${BASE_CORE}" ]]; then
+              fail "continuumVersion ${HEAD_VERSION} is a pre-release of ${BASE_VERSION}, which is already released"
+            else
+              # both pre-releases of the same version: head must sort after base
+              HIGHEST=$(printf '%s\n%s\n' "${BASE_VERSION}" "${HEAD_VERSION}" | sort -V | tail -1)
+              if [[ "${HIGHEST}" != "${HEAD_VERSION}" ]]; then
+                fail "continuumVersion ${HEAD_VERSION} is lower than ${BASE_VERSION} on ${{ github.base_ref }}"
+              fi
+              echo "Version bump OK: ${BASE_VERSION} -> ${HEAD_VERSION}"
+            fi
+          else
+            HIGHEST=$(printf '%s\n%s\n' "${BASE_CORE}" "${HEAD_CORE}" | sort -V | tail -1)
+            if [[ "${HIGHEST}" != "${HEAD_CORE}" ]]; then
+              fail "continuumVersion ${HEAD_VERSION} is lower than ${BASE_VERSION} on ${{ github.base_ref }}"
+            fi
+            echo "Version bump OK: ${BASE_VERSION} -> ${HEAD_VERSION}"
+          fi

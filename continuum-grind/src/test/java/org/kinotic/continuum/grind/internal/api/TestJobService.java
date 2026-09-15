@@ -17,6 +17,8 @@
 
 package org.kinotic.continuum.grind.internal.api;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,8 +31,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;

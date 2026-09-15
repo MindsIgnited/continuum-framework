@@ -17,17 +17,15 @@
 
 package org.kinotic.continuum.api.log;
 
-import org.kinotic.continuum.api.annotations.Publish;
 import org.kinotic.continuum.api.annotations.Scope;
-import org.kinotic.continuum.api.annotations.Version;
 
 /**
  * Interface providing the ability to work with runtime logging configuration per node
  *
  * Created by Navid Mitchell 🤪 on 7/9/20
  */
-@Publish
-@Version("0.1.0")
+//@Publish FIXME: add RBAC for this
+//@Version("0.1.0")
 public interface LogManager {
 
     @Scope

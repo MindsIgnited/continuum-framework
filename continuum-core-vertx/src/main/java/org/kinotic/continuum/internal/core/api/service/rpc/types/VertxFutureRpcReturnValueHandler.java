@@ -17,15 +17,14 @@
 
 package org.kinotic.continuum.internal.core.api.service.rpc.types;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import org.kinotic.continuum.core.api.event.Event;
 import org.kinotic.continuum.core.api.event.EventConstants;
+import org.kinotic.continuum.internal.core.api.service.ExceptionConverter;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcRequest;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcResponseConverter;
 import org.kinotic.continuum.internal.core.api.service.rpc.RpcReturnValueHandler;
-import org.kinotic.continuum.internal.utils.EventUtil;
-import io.vertx.core.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.MethodParameter;
@@ -42,20 +41,20 @@ public class VertxFutureRpcReturnValueHandler implements RpcReturnValueHandler {
 
     private final MethodParameter methodParameter;
     private final RpcResponseConverter rpcResponseConverter;
-    private final ObjectMapper objectMapper;
+    private final ExceptionConverter exceptionConverter;
     private final Promise<Object> promise;
 
     public VertxFutureRpcReturnValueHandler(MethodParameter methodParameter,
                                             RpcResponseConverter rpcResponseConverter,
-                                            ObjectMapper objectMapper) {
+                                            ExceptionConverter exceptionConverter) {
 
         Assert.notNull(methodParameter, "methodParameter must not be null");
         Assert.notNull(rpcResponseConverter, "responseConverter must not be null");
-        Assert.notNull(objectMapper, "objectMapper must not be null");
+        Assert.notNull(exceptionConverter, "exceptionConverter must not be null");
 
         this.methodParameter = methodParameter;
         this.rpcResponseConverter = rpcResponseConverter;
-        this.objectMapper = objectMapper;
+        this.exceptionConverter = exceptionConverter;
         this.promise = Promise.promise();
     }
 
@@ -64,7 +63,7 @@ public class VertxFutureRpcReturnValueHandler implements RpcReturnValueHandler {
         try{
             // Error data is returned differently
             if(incomingEvent.metadata().contains(EventConstants.ERROR_HEADER)) {
-                promise.fail(EventUtil.createThrowableForEventWithError(incomingEvent, objectMapper));
+                promise.fail(exceptionConverter.convert(incomingEvent));
             }else{
                 promise.complete(rpcResponseConverter.convert(incomingEvent, methodParameter));
             }

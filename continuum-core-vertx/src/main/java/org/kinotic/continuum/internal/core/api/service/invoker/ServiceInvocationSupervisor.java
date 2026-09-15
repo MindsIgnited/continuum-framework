@@ -36,6 +36,7 @@ import org.kinotic.continuum.core.api.service.ServiceDescriptor;
 import org.kinotic.continuum.core.api.service.ServiceFunction;
 import org.kinotic.continuum.core.api.service.ServiceFunctionInstanceProvider;
 import org.kinotic.continuum.internal.core.api.event.MetadataTextMapGetter;
+import org.kinotic.continuum.internal.core.api.service.ExceptionConverter;
 import org.kinotic.continuum.internal.utils.EventUtil;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;

@@ -18,7 +18,6 @@
 package org.kinotic.continuum.internal.core.api.event;
 
 import org.kinotic.continuum.core.api.event.Metadata;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -69,7 +68,6 @@ public class MapMetadataAdapter implements Metadata {
         return mapDelegate.size();
     }
 
-    @NotNull
     @Override
     public Iterator<Map.Entry<String, String>> iterator() {
         return mapDelegate.entrySet().iterator();

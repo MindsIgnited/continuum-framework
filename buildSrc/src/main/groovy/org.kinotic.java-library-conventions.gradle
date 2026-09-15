@@ -46,7 +46,7 @@ publishing {
                 }
                 developers {
                     developer {
-                        name = 'Kinotic Developers'
+                        name = 'Kinotic Development Team'
                         email = 'develop@kinotic.org'
                     }
                 }
@@ -67,6 +67,8 @@ publishing {
 }
 
 jreleaser {
+    // Multi-module: the repository is at the root, not in the module JReleaser runs in
+    gitRootSearch = true
     signing {
         active = 'ALWAYS'
         armored = true
@@ -79,6 +81,12 @@ jreleaser {
                     active = 'RELEASE'
                     url = 'https://central.sonatype.com/api/v1/publisher'
                     applyMavenCentralRules = true
+                    // Each module is its own Central Portal deployment, polled until PUBLISHED. The default
+                    // 100 x 20 s (~33 min) cap was nearly hit by one structures module (74 polls, ~26 min);
+                    // a module that overruns it fails while earlier ones are already live and immutable.
+                    // 200 x 30 s (~100 min) matches what JReleaser uses for its own releases.
+                    maxRetries = 200
+                    retryDelay = 30
                     stagingRepository('build/staging-deploy')
                 }
             }
