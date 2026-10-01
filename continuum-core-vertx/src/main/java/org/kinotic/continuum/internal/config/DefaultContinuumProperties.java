@@ -42,6 +42,7 @@ public class DefaultContinuumProperties implements ContinuumProperties {
 
     private boolean debug = false;
     private boolean disableClustering = false;
+    private boolean preferNativeTransport = true;
     private int eventBusClusterPort = 0;
     private int eventBusClusterPublicPort = -1;
     private String eventBusClusterHost = null;
@@ -65,6 +66,7 @@ public class DefaultContinuumProperties implements ContinuumProperties {
         ToStringBuilder sb = new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                                     .append("debug", debug)
                                     .append("disableClustering", disableClustering)
+                                    .append("preferNativeTransport", preferNativeTransport)
                                     .append("sessionTimeout", sessionTimeout)
                                     .append("maxOffHeapMemory", maxOffHeapMemory);
 

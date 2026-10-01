@@ -76,6 +76,17 @@ public interface ContinuumProperties {
     int getMaxEventPayloadSize();
 
     /**
+     * If true Vert.x runs on the native transport for the platform (epoll on Linux) when its library is on the
+     * classpath, falling back to NIO otherwise. Continuum ships the Linux x86_64 and aarch64 libraries.
+     * The native transport is what applies TCP options such as TCP_USER_TIMEOUT and keepalive tuning; NIO ignores them.
+     * Defaults to true.
+     * @return true to prefer the native transport, false to always use NIO
+     */
+    default boolean isPreferNativeTransport() {
+        return true;
+    }
+
+    /**
      * The maximum number of CPU cores if not set or less than 1, this will default to the available number of cores.
      * @return the max number of CPU Cores to Use
      */

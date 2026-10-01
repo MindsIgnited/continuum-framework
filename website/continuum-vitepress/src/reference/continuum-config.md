@@ -1,5 +1,16 @@
 # Continuum Configuration
 
+## Network Transport
+
+- `continuum.preferNativeTransport` (default `true`) — run Vert.x on the platform's native transport (epoll on Linux) instead of Java NIO. Continuum ships the epoll libraries for Linux x86_64 and aarch64, and Netty loads the one matching the CPU it runs on, so the same image works on both. Elsewhere, such as on macOS, Vert.x falls back to NIO.
+
+The native transport is what applies TCP options such as `TCP_USER_TIMEOUT` and keepalive tuning; NIO silently ignores them. Clients that rely on them to notice a peer that vanished without closing its connections, such as Structures' Elasticsearch client, only get that on the native transport. At startup Continuum logs which transport Vert.x is using, with a warning on Linux if it fell back to NIO. Set it to `false` only to rule the native transport out while troubleshooting.
+
+```yaml
+continuum:
+  preferNativeTransport: true
+```
+
 ## Clustering Options
 
 Continuum clustering is powered by Apache Ignite and is controlled through the `continuum` namespace in your Spring Boot configuration (`application.yml`, `application.properties`, or environment variables). By default clustering is enabled and uses the local discovery mode, which lets you run a single-node Continuum instance without any extra configuration.

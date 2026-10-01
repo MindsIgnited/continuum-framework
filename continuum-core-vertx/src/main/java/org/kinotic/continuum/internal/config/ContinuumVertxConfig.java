@@ -28,6 +28,8 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import org.apache.ignite.Ignite;
 import org.kinotic.continuum.api.config.ContinuumProperties;
 import org.kinotic.continuum.internal.ContinuumIgniteClusterManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -41,6 +43,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  */
 @Configuration
 public class ContinuumVertxConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(ContinuumVertxConfig.class);
 
     @Bean
     @ConditionalOnProperty(
@@ -76,8 +80,11 @@ public class ContinuumVertxConfig {
     public Vertx vertx(ContinuumProperties properties,
                        @Autowired(required = false) ClusterManager clusterManager) throws Throwable {
 
-        VertxBuilder builder = Vertx.builder();
+        VertxOptions options = new VertxOptions()
+                .setPreferNativeTransport(properties.isPreferNativeTransport());
+        VertxBuilder builder = Vertx.builder().with(options);
 
+        Vertx vertx;
         if (clusterManager != null) {
 
             EventBusOptions eventBusOptions = new EventBusOptions();
@@ -91,17 +98,37 @@ public class ContinuumVertxConfig {
                 eventBusOptions.setClusterPublicHost(properties.getEventBusClusterPublicHost());
             }
 
-            VertxOptions options = new VertxOptions()
-                    .setEventBusOptions(eventBusOptions);
+            options.setEventBusOptions(eventBusOptions);
 
-            return builder.with(options)
-                          .withClusterManager(clusterManager)
-                          .buildClustered()
-                          .toCompletionStage()
-                          .toCompletableFuture()
-                          .get(2, MINUTES);
+            vertx = builder.withClusterManager(clusterManager)
+                           .buildClustered()
+                           .toCompletionStage()
+                           .toCompletableFuture()
+                           .get(2, MINUTES);
         }else{
-            return builder.build();
+            vertx = builder.build();
+        }
+        logTransport(vertx, properties);
+        return vertx;
+    }
+
+    /**
+     * Says which transport Vert.x ended up on, since it falls back to NIO quietly when the native library is missing
+     */
+    private static void logTransport(Vertx vertx, ContinuumProperties properties) {
+        if (vertx.isNativeTransportEnabled()) {
+            log.info("Vert.x is using the native transport");
+        } else if (properties.isPreferNativeTransport()) {
+            Throwable cause = vertx.unavailableNativeTransportCause();
+            String reason = cause != null ? cause.toString() : "no native transport for this platform";
+            // Expected on a developer's Mac, but on Linux it means the server lost the TCP options it relies on
+            if (System.getProperty("os.name", "").toLowerCase().contains("linux")) {
+                log.warn("Vert.x is using NIO, the native transport is unavailable: {}", reason);
+            } else {
+                log.info("Vert.x is using NIO, the native transport is unavailable: {}", reason);
+            }
+        } else {
+            log.info("Vert.x is using NIO, continuum.prefer-native-transport is false");
         }
     }
 
