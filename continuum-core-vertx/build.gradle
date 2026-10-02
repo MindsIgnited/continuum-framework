@@ -18,6 +18,10 @@ dependencies {
     api 'io.vertx:vertx-core'
     implementation 'io.vertx:vertx-auth-common'
     implementation 'io.vertx:vertx-ignite'
+    // Native transport for Linux; Netty loads the library matching the CPU it runs on, and Vert.x falls back to NIO
+    // elsewhere, such as on macOS
+    runtimeOnly 'io.netty:netty-transport-native-epoll::linux-x86_64'
+    runtimeOnly 'io.netty:netty-transport-native-epoll::linux-aarch_64'
 
     // Apache Ignite
     implementation 'org.apache.ignite:ignite-core'
